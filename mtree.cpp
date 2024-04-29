@@ -1,12 +1,19 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+
+struct Node;
+
+struct MTree{
+    vector<Node> nodes;
+};
+
 struct Node{
     pair<double,double> p;
     double radius;
     MTree *a;
 };
 
-struct MTree{
-    vector<Node> nodes;
-};
+int main(){
+    return 0;
+}
