@@ -17,7 +17,7 @@ MTree cp(PointSet P){
             n.p = p;
             n.radius = 0;
             n.a = nullptr;
-            T.nodes.push_back(n);
+            T.nodes.insert(n);
         }
         return T;
     }

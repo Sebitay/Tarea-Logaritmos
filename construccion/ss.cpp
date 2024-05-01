@@ -1,22 +1,21 @@
 #include "../mtree.cpp"
 #include "../plot.cpp"
 #include <bits/stdc++.h>
+#include <cmath>
 using namespace std;
 
 int B = 10000;
 int b = B/2;
-
-typedef pair<double,double> point;
 
 double dist(point p, point q){
     return sqrt((p.first - q.first)*(p.first - q.first) + (p.second - q.second)*(p.second - q.second));
 }
 
 struct cluster{
-    vector<point> points;
+    set<point> points;
     point medoide;
 
-    cluster(const vector<point>& pts) : points(pts) {
+    cluster(const set<point>& pts) : points(pts) {
         medoide = calculate_medoide();
     }
 
@@ -41,13 +40,18 @@ struct cluster{
     };
 };
 
+bool operator==(const cluster& lhs, const cluster& rhs) {
+    // Compare the points set of each cluster
+    return lhs.points == rhs.points;
+}
+
 cluster merge_clusters(cluster C, cluster D){
-    vector<point> points;
+    set<point> points;
     for (auto p : C.points){
-        points.push_back(p);
+        points.insert(p);
     }
     for (auto p : D.points){
-        points.push_back(p);
+        points.insert(p);
     }
     return cluster(points);
 }
@@ -97,7 +101,7 @@ pair<cluster, cluster> par_mas_cercano(vector<cluster> clusters){
     return best_pair;
 }
 
-double covering_radius(vector<point> points){
+double covering_radius(set<point> points){
     double best_radius = 1e9;
     for(auto p : points){
         double max_radius = 0.0;
@@ -115,7 +119,7 @@ double covering_radius(vector<point> points){
 //FUNCION MIN MAX SPLIT
 pair<cluster, cluster> min_max_split(cluster C){
     cluster C1 = cluster({}), C2 = cluster({});
-    pair<vector<point>,vector<point>> best_points;
+    pair<set<point>,set<point>> best_points;
     double min_radius = 1e9;
     for(auto p : C.points){
         for(auto q : C.points){
@@ -128,16 +132,16 @@ pair<cluster, cluster> min_max_split(cluster C){
             }
             auto it_p = distancias_p.begin();
             auto it_q = distancias_q.begin();
-            vector<point> puntos_c1, puntos_c2;
+            set<point> puntos_c1, puntos_c2;
             while(it_p != distancias_p.end() && it_q != distancias_q.end()){
-                puntos_c1.push_back(it_p->second);
+                puntos_c1.insert(it_p->second);
                 puntos_agregados.insert(it_p->second);
 
                 while(puntos_agregados.find(it_q->second) != puntos_agregados.end()){
                     it_q++;
                 }
 
-                puntos_c2.push_back(it_q->second);
+                puntos_c2.insert(it_q->second);
                 puntos_agregados.insert(it_q->second);
                 it_p++;
                 it_q++;
@@ -188,9 +192,63 @@ vector<cluster> gen_cluster(cluster Cin){
 };
 
 
+Node output_hoja(cluster Cin){
+    double r = 0;
+    MTree C = MTree({});
+    for (auto p : Cin.points){
+        C.insert(new Node{p, -1, NULL});
+        r = max(r, dist(p, Cin.medoide));
+    }
+    return Node{Cin.medoide, r, &C};
+};
 
+Node output_interno(MTree Cmra){
+    set<point> Cin; 
+    MTree C = MTree({});
+    double R = 0;
+    for (auto node : Cmra)
+        Cin.insert(node->p);
+    cluster Cin_cluster = cluster(Cin);
+    for (auto node : Cmra){
+        R = max(R, dist(node->p, Cin_cluster.medoide) + node->radius);
+        C.insert(new Node{node->p, node->radius, node->a});
+    }
+    return Node{Cin_cluster.medoide, R, &C};
+}
+
+MTree *ss(set<point> P){
+    cluster Cin = cluster(P);
+    if (Cin.points.size() <= B)
+        return output_hoja(Cin).a;
+    vector<cluster> Cout = gen_cluster(Cin);
+    MTree C = MTree({});
+    for (auto c : Cout)
+        C.insert(new Node(output_hoja(c)));
+    while (C.size() > B){
+        set<MTree> Cmra;
+        set<point> Cin;
+        for (auto node : C)
+            Cin.insert(node->p);
+        Cout = gen_cluster(cluster(Cin));
+        for (auto c : Cout){
+            MTree s = MTree({});
+            for (auto node : C){
+                if (c.points.find(node->p) != c.points.end())
+                    s.insert(node);
+            }
+            Cmra.insert(s);
+        }
+        C.clear();
+        for(auto tree : Cmra){
+            C.insert(new Node(output_interno(tree)));
+        }
+    }
+    Node root = output_interno(C);
+    return root.a;
+}
 
 int main(){
-    vector<point> P = {{1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}, {6, 6}};
+    set<point> P = generate_points(pow(2, 15));
+    MTree *T = ss(P);
     return 0;
 }

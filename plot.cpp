@@ -10,22 +10,12 @@ double generate_random_coordinate() {
 }
 
 // Función para generar el conjunto de puntos P
-vector<pair<double, double>> generate_points(int n) {
-    vector<pair<double, double>> points;
-    points.reserve(n);
+set<pair<double, double>> generate_points(int n) {
+    set<pair<double, double>> points;
     for (int i = 0; i < n; ++i) {
         double x = generate_random_coordinate();
         double y = generate_random_coordinate();
-        points.emplace_back(x, y);
+        points.insert({x, y});
     }
     return points;
-}
-
-int main(){
-    int P = 100;
-    vector<pair<double, double>> points = generate_points(P);
-    for(int i =0; i < P; i++){
-        cout<<points[i].first<<'-'<<points[i].second<<endl;
-    }
-    return 0;
 }
