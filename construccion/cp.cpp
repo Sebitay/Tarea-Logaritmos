@@ -5,7 +5,7 @@
 using namespace std;
 using PointSet = vector<pair<double, double>>; // ver si es que es set o vector
 
-int B = 2; // modificar
+int B = 100; // modificar
 
 MTree cp(PointSet P){
 
@@ -28,56 +28,83 @@ MTree cp(PointSet P){
     // (falta lidiar con el tema de los repetidos)
     int k = min(B, (int)P.size()/B);
     PointSet F;
-    //srand(time(0));
+    srand(time(0));
     for(int i = 0; i < k; i++){
         int idx = rand() % P.size();
         F.push_back(P[idx]);
     }
-    // show the samples
-    cout<<endl;
-    for(int i =0; i < k; i++){
-        cout<<'s'<<i<<':'<<F[i].first<<'-'<<F[i].second<<endl;
-    }
-    
     
     // 3. Se le asigna a cada punto en P su sample más cercano. Con eso se puede construir k conjuntos
     // F1, . . . , Fk.
     vector<PointSet> Fk(k);
-    cout<<Fk.size()<<endl;
     for(auto p : P){
         double min_dist = 1e9;
         int idx = -1;
         for(int i = 0; i < k; i++){
             // calcular la distancia entre p y F[i]:
             double dist = sqrt(pow(p.first - F[i].first, 2) + pow(p.second - F[i].second, 2));
-            cout<<dist<<endl;
             // actualizar el mínimo:
             if(dist < min_dist){
                 min_dist = dist;
                 idx = i;
             }
         }
-        cout<<"min:"<<min_dist<<endl;
-        cout<<endl;
         // añadir p a Fk[idx]:
         Fk[idx].push_back(p);
     }
     // show the sets
     cout<<endl;
     for(int i = 0; i < k; i++){
-        cout<<"F"<<i<<endl;
-        for(auto p : Fk[i]){
-            cout<<p.first<<'-'<<p.second<<endl;
-        }
+        cout<<"size F"<<i<<": "<<Fk[i].size()<<endl;
     }
 
     // 4. Etapa de redistribución: Si algún Fj es tal que |Fj| < b:
+    
+    for (int i = 0; i < k; i++){
+        if(Fk[i].size() < B){
+
+            // 4.1 Quitamos pfj de F
+            F.erase(F.begin() + i);
+
+            // 4.2 Por cada p ∈ Fj, le buscamos el sample pfl más cercano de F y lo añadimos a su conjunto Fl.
+            for(auto p : Fk[i]){
+                double min_dist = 1e9;
+                int idx = -1;
+                for(int j = 0; j < k; j++){
+                    // calcular la distancia entre p y F[i]:
+                    double dist = sqrt(pow(p.first - F[j].first, 2) + pow(p.second - F[j].second, 2));
+                    // actualizar el mínimo:
+                    if(dist < min_dist){
+                        min_dist = dist;
+                        idx = j;
+                    }
+                }
+                // añadir p a Fk[idx]:
+                Fk[idx].push_back(p);
+            }
+        }   
 
     
-
+    }
+    // show the sets
+    cout<<endl;
+    cout<<"redistribucion"<<endl; 
+    for(int i = 0; i < k; i++){
+        cout<<"size F"<<i<<": "<<Fk[i].size()<<endl;
+    }
+    
     // 5. Si |F| = 1, volver al paso 2.
+    cout<<endl<<"size F: "<<F.size()<<endl;
+    if(F.size() == 1){
+        return cp(P);
+    }
     
     // 6. Se realiza recursivamente el algoritmo CP en cada Fj, obteniendo el árbol Tj
+    vector<MTree> Tk(k);
+    for (int i = 0; i < k; i++){
+        MTree Ti = cp(Fk[i]);
+        Tk[i] = Ti; 
+    }
 
 
     // 7. Si la raíz del árbol es de un tamaño menor a b, se quita esa raíz, se elimina pfj de F y se trabaja
@@ -109,11 +136,8 @@ MTree cp(PointSet P){
 
 
 int main(){
-    int N = 4;
+    int N = 4000;
     PointSet points = generate_points(N);
-    for(int i =0; i < N; i++){
-        cout<<'P'<<i<<':'<<points[i].first<<'-'<<points[i].second<<endl;
-    }
     MTree T = cp(points);
     // show the nodes of the tree
     //for(auto n : T.nodes){
