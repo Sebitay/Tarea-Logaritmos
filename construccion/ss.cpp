@@ -4,7 +4,7 @@
 #include <cmath>
 using namespace std;
 
-int B = 10000;
+int B = 4096/sizeof(point);
 int b = B/2;
 
 double dist(point p, point q){
@@ -84,16 +84,20 @@ cluster vecino(vector<cluster> clusters, cluster C){
 pair<cluster, cluster> par_mas_cercano(vector<cluster> clusters){
     double best_dist = cluster_dist(clusters[0], clusters[1]);
     pair<cluster, cluster> best_pair = {clusters[0], clusters[1]};
-    for (auto C : clusters){
-        for (auto D : clusters){
-            if (C.points != D.points){
-                double d = cluster_dist(C, D);
+    int i = 0;
+    for (auto C = clusters.begin(); C != clusters.end(); C++){
+        cout<< i++ << endl;
+        for (auto D = clusters.end()--; D != clusters.begin(); D--){
+            if (C == D)
+                break;
+            if (C->points != D->points){
+                double d = cluster_dist(*C, *D);
                 if (d < best_dist){
                     best_dist = d;
-                    if(C.points.size() < D.points.size())
-                        best_pair = {D, C};
+                    if(C->points.size() < D->points.size())
+                        best_pair = {*D, *C};
                     else
-                        best_pair = {C, D};
+                        best_pair = {*C, *D};
                 }
             }
         }
@@ -121,13 +125,20 @@ pair<cluster, cluster> min_max_split(cluster C){
     cluster C1 = cluster({}), C2 = cluster({});
     pair<set<point>,set<point>> best_points;
     double min_radius = 1e9;
-    for(auto p : C.points){
-        for(auto q : C.points){
+    int i = 0;
+    cout << C.points.size() << endl;
+    for(auto p = C.points.begin(); p != C.points.end(); p++){
+        cout<< i++ << endl;
+        for(auto q = C.points.end()--; q != C.points.begin(); q--){
+            if(p == q)
+                break;
             set<pair<double, point>> distancias_p, distancias_q;
             set<point> puntos_agregados;
             for(auto r : C.points){
-                distancias_p.insert({dist(p, r), r});
-                distancias_q.insert({dist(q, r), r});
+                if (r != *p)
+                    distancias_p.insert({dist(*p, r), r});
+                if (r != *q)
+                    distancias_q.insert({dist(*q, r), r});
                 puntos_agregados.insert(r);
             }
             auto it_p = distancias_p.begin();
@@ -136,8 +147,8 @@ pair<cluster, cluster> min_max_split(cluster C){
             while(it_p != distancias_p.end() && it_q != distancias_q.end()){
                 puntos_c1.insert(it_p->second);
                 puntos_agregados.insert(it_p->second);
-
-                while(puntos_agregados.find(it_q->second) != puntos_agregados.end()){
+                
+                while(puntos_agregados.find(it_q->second) != puntos_agregados.end() && it_q != distancias_q.end()){
                     it_q++;
                 }
 
@@ -146,6 +157,7 @@ pair<cluster, cluster> min_max_split(cluster C){
                 it_p++;
                 it_q++;
             }
+            
             double best_radius = max(covering_radius(puntos_c1), covering_radius(puntos_c2));
             if (best_radius < min_radius){
                 min_radius = best_radius;
@@ -159,13 +171,15 @@ pair<cluster, cluster> min_max_split(cluster C){
 
 vector<cluster> gen_cluster(cluster Cin){
     vector<cluster> C, Cout;
-
+    cout<< '1' << endl;
     for(auto p : Cin.points){
         C.push_back(cluster({p}));
     }
-
+    cout<< '2' << endl;
     while(C.size() > 1){
+        cout<< C.size() << endl;
         pair<cluster, cluster> pares_cercanos = par_mas_cercano(C);
+        cout << "pares_cercanos" << endl;
         if(pares_cercanos.first.points.size() + pares_cercanos.second.points.size() <= B){
             C.erase(remove(C.begin(), C.end(), pares_cercanos.first), C.end());
             C.erase(remove(C.begin(), C.end(), pares_cercanos.second), C.end());
@@ -175,16 +189,22 @@ vector<cluster> gen_cluster(cluster Cin){
             Cout.push_back(pares_cercanos.first);
         }
     }
+    cout<< '3' << endl;
 
     cluster c_prima = cluster({});
     if(Cout.size() > 0){
         c_prima = vecino(Cout, C[0]);
     }
+    cout<< '4' << endl;
     cluster c_union = merge_clusters(c_prima, C[0]);
-    if(c_prima.points.size() + C[0].points.size() <= B)
+    cout<< '5' << endl;
+    if(c_prima.points.size() + C[0].points.size() <= B){
         Cout.push_back(c_union);
+        cout<< "6.1" << endl;
+    }
     else{
         pair<cluster, cluster> split = min_max_split(c_union);
+        cout<< "6.2" << endl;
         Cout.push_back(split.first);
         Cout.push_back(split.second);
     }
@@ -217,19 +237,27 @@ Node output_interno(MTree Cmra){
 }
 
 MTree *ss(set<point> P){
+    cout<< '1' << endl;
     cluster Cin = cluster(P);
+    cout<< '2' << endl;
     if (Cin.points.size() <= B)
         return output_hoja(Cin).a;
+    cout<< '3' << endl;
     vector<cluster> Cout = gen_cluster(Cin);
+    cout<< '4' << endl;
     MTree C = MTree({});
+    cout<< '5' << endl;
     for (auto c : Cout)
         C.insert(new Node(output_hoja(c)));
+    cout<< '6' << endl;
     while (C.size() > B){
         set<MTree> Cmra;
         set<point> Cin;
         for (auto node : C)
             Cin.insert(node->p);
+        cout<< '7' << endl;
         Cout = gen_cluster(cluster(Cin));
+        cout<< '8' << endl;
         for (auto c : Cout){
             MTree s = MTree({});
             for (auto node : C){
@@ -238,17 +266,22 @@ MTree *ss(set<point> P){
             }
             Cmra.insert(s);
         }
+        cout<< '9' << endl;
         C.clear();
         for(auto tree : Cmra){
             C.insert(new Node(output_interno(tree)));
         }
+        cout << "10" << endl;
     }
+    cout << "11" << endl;
     Node root = output_interno(C);
+    cout << "12" << endl;
     return root.a;
 }
 
 int main(){
-    set<point> P = generate_points(pow(2, 15));
+    cout<< sizeof(point) << endl;
+    set<point> P = generate_points(pow(2, 10));
     MTree *T = ss(P);
     return 0;
 }
