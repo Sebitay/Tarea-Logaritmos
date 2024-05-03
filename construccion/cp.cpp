@@ -4,29 +4,30 @@
 #include "../plot.cpp"
 using namespace std;
 
-typedef pair<double, double> Point;
-typedef set<Point> PointSet;
+typedef pair<double, double> point;
+typedef set<point> PointSet;
 
-int B = 2;
-//int B = 4096/sizeof(point);
+//int B = 2;
+int B = 4096/sizeof(point);
 int b = B/2;
 
 
-double distance(Point p1, Point p2) {
+double distance(point p1, point p2) {
     return sqrt(pow(p1.first - p2.first, 2) + pow(p1.second - p2.second, 2));
 }
 
 MTree* cp(PointSet P) {
     
-    // 1. Si |P| ≤ B, se crea un árbol T, se insertan todos los puntos a T y se retorna T:
+    // Si |P| ≤ B, se crea un árbol T, se insertan todos los puntos a T y se retorna T:
     if (P.size() <= B) {
-        MTree* T = new MTree();
-        for (auto p : P) {
-            Node* n = new Node();
-            n->p = p;
-            n->radius = 0;
-            n->a = nullptr;
-            T->insert(n);
+        MTree* T = new MTree;
+        T->root = new Node;
+        for (auto& p : P) {
+            entry e;
+            e.p = p;
+            e.radius = 0;
+            e.a = nullptr;
+            T->root->entries.push_back(e);
         }
         return T;
     }
@@ -34,7 +35,7 @@ MTree* cp(PointSet P) {
     // 2. De manera aleatoria se eligen k = min(B, n/B) puntos de P, que los llamaremos samples
     // pf1, . . . , pfk. Se insertan en un conjunto F de samples.
     int k = min(B, static_cast<int>(P.size() / B));
-    vector<Point> F;
+    vector<point> F;
     for (int i = 0; i < k; i++) {
         int idx = rand() % P.size();
         auto it = next(P.begin(), idx);
@@ -42,10 +43,10 @@ MTree* cp(PointSet P) {
     }
 
     // show the samples
-    //cout << "samples" << endl;
-    //for (auto p : F) {
-      //  cout << p.first << '-' << p.second << endl;
-    //}
+    cout << "samples" << endl;
+    for (auto p : F) {
+        cout << p.first << '-' << p.second << endl;
+    }
 
 
     // 3. Se le asigna a cada punto en P su sample más cercano. Con eso se puede construir k conjuntos
@@ -70,14 +71,14 @@ MTree* cp(PointSet P) {
         Fk[idx].insert(p);
     }
     // show the sets
-    /* cout << endl;
+    cout << endl;
     for (int i = 0; i < k; i++) {
         // show the points
         cout << "F" << i << endl;
         for (auto p : Fk[i]) {
             cout << p.first << '-' << p.second << endl;
         }
-    } */
+    }
 
     
 
@@ -113,7 +114,7 @@ MTree* cp(PointSet P) {
     // eliminar los valores vacios de fk
 
     // show the sets
-    /* cout << endl;
+    cout << endl;
     cout << "redistribucion" << endl;
     for (int i = 0; i < k; i++) {
         // show the points
@@ -121,7 +122,7 @@ MTree* cp(PointSet P) {
         for (auto p : Fk[i]) {
             cout << p.first << '-' << p.second << endl;
         }
-    } */
+    }
 
     
     // 5. Si |F| = 1, volver al paso 2.
@@ -136,33 +137,24 @@ MTree* cp(PointSet P) {
         if (Fk[j].size() == 0) continue;
         MTree* Tj = cp(Fk[j]);
         Tk[j] = *Tj;
-
+  
 
         // 7. Si la raíz del árbol es de un tamaño menor a b, se quita esa raíz, se elimina pfj de F y se trabaja
         // con sus subárboles como nuevos Tj, se añaden los puntos pertinentes a F.
         // revisar
-        if (Tj->size() < b) {
+        if (Tj->root->entries.size() < b) {
 
             // Quitar la raíz de Tj
-            auto it = Tj->begin();
-            Node* root = *it;
-            Tj->erase(it);
+            auto it = Tj->root;
+            Tj->root = nullptr;
 
             // Eliminar pfj de F
-            F.erase(find(F.begin(), F.end(), root->p));
-
-            // Trabajar con los subárboles como nuevos Tj
-            for (auto n : *Tj) {
-                Tk.push_back(*n->a);
-            }
-
-            // Añadir los puntos pertinentes a F
-            for (auto n : *Tj) {
-                F.push_back(n->p);
-            }
+            
 
         }
     }
+
+/*     
 
     // 8. Etapa de balanceamiento: Se define h como la altura mínima de los árboles Tj. Se define T′
     // inicialmente como un conjunto vacío.
@@ -234,17 +226,19 @@ MTree* cp(PointSet P) {
 
     // 13. Se retorna T
     return T;
-}
+    */
+    return nullptr; // depues cambiar
+    }
 
 int main() {
     int N = 4;
     //int N = pow(2, 15);
     PointSet points = generate_points(N);
     // show the points
-    //cout << "points" << endl;
-    //for (auto p : points) {
-      //  cout << p.first << '-' << p.second << endl;
-    //} 
+    cout << "points" << endl;
+    for (auto p : points) {
+        cout << p.first << '-' << p.second << endl;
+    } 
     MTree* T = cp(points);
     return 0;
 }
