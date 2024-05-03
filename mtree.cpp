@@ -2,18 +2,27 @@
 using namespace std;
 
 
+typedef pair<double,double> point;
+
 struct Node;
 
-struct MTree{
-    vector<Node> nodes;
-};
+// Forward declaration of NodeComparator
+struct NodeComparator;
+
+typedef set<Node*, NodeComparator> MTree; // Use NodeComparator for set comparison
 
 struct Node{
-    pair<double,double> p;
+    point p;
     double radius;
-    MTree *a;
+    MTree* a; // Pointer to MTree
 };
 
-int main(){
-    return 0;
-}
+// Define NodeComparator
+struct NodeComparator {
+    bool operator()(const Node* lhs, const Node* rhs) const {
+        // Compare based on the point coordinates
+        if (lhs->p.first != rhs->p.first)
+            return lhs->p.first < rhs->p.first;
+        return lhs->p.second < rhs->p.second;
+    }
+};
