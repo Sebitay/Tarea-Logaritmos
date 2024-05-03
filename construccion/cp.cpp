@@ -42,10 +42,10 @@ MTree* cp(PointSet P) {
     }
 
     // show the samples
-    cout << "samples" << endl;
-    for (auto p : F) {
-        cout << p.first << '-' << p.second << endl;
-    }
+    //cout << "samples" << endl;
+    //for (auto p : F) {
+      //  cout << p.first << '-' << p.second << endl;
+    //}
 
 
     // 3. Se le asigna a cada punto en P su sample más cercano. Con eso se puede construir k conjuntos
@@ -70,14 +70,14 @@ MTree* cp(PointSet P) {
         Fk[idx].insert(p);
     }
     // show the sets
-    cout << endl;
+    /* cout << endl;
     for (int i = 0; i < k; i++) {
         // show the points
         cout << "F" << i << endl;
         for (auto p : Fk[i]) {
             cout << p.first << '-' << p.second << endl;
         }
-    }
+    } */
 
     
 
@@ -113,7 +113,7 @@ MTree* cp(PointSet P) {
     // eliminar los valores vacios de fk
 
     // show the sets
-    cout << endl;
+    /* cout << endl;
     cout << "redistribucion" << endl;
     for (int i = 0; i < k; i++) {
         // show the points
@@ -121,11 +121,11 @@ MTree* cp(PointSet P) {
         for (auto p : Fk[i]) {
             cout << p.first << '-' << p.second << endl;
         }
-    }
+    } */
 
     
     // 5. Si |F| = 1, volver al paso 2.
-    cout << endl << "size F: " << F.size() << endl;
+    //cout << endl << "size F: " << F.size() << endl;
     if (F.size() == 1) {
         return cp(P);
     }
@@ -203,12 +203,36 @@ MTree* cp(PointSet P) {
     PointSet F_set(F.begin(), F.end());
     MTree* Tsup = cp(F_set);
 
-    // 11. Se une cada Tj ∈ T ′ a su hoja en Tsup correspondiente al punto pfj ∈ F, obteniendo un nuevo árbol T.
+    // 11. Se une cada Tj ∈ T′ a su hoja en Tsup correspondiente al punto pfj ∈ F, obteniendo un nuevo árbol T.
+    MTree* T = new MTree();
+    for (auto n : T_prime) {
+        // buscar el punto pfj en F
+        auto it = find(F.begin(), F.end(), n->p);
+        int idx = distance(F.begin(), it);
+        // buscar el punto pfj en F_set
+        auto it_set = find(F_set.begin(), F_set.end(), n->p);
+        int idx_set = distance(F_set.begin(), it_set);
+        // buscar el nodo correspondiente en Tsup
+        auto it_sup = next(Tsup->begin(), idx_set);
+        Node* n_sup = *it_sup;
+        // unir n y n_sup
+        n->a = n_sup->a;
+        T->insert(n);
+    }
 
     // 12. Se setean los radios cobertores resultantes para cada entrada en este árbol.
+    for (auto n : *T) {
+        double max_dist = 0;
+        for (auto n2 : *n->a) {
+            double dist = distance(n->p, n2->p);
+            if (dist > max_dist) {
+                max_dist = dist;
+            }
+        }
+        n->radius = max_dist;
+    }
 
     // 13. Se retorna T
-    MTree* T = new MTree();
     return T;
 }
 
@@ -217,10 +241,10 @@ int main() {
     //int N = pow(2, 15);
     PointSet points = generate_points(N);
     // show the points
-    cout << "points" << endl;
-    for (auto p : points) {
-        cout << p.first << '-' << p.second << endl;
-    } 
+    //cout << "points" << endl;
+    //for (auto p : points) {
+      //  cout << p.first << '-' << p.second << endl;
+    //} 
     MTree* T = cp(points);
     return 0;
 }
