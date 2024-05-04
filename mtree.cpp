@@ -3,8 +3,14 @@ using namespace std;
 
 typedef pair<double,double> point;
 
+struct entry;
+
+struct Node;
+
 struct MTree {
     Node* root;
+
+    MTree() : root(nullptr) {}
 };
 
 struct Node{
