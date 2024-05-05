@@ -239,7 +239,7 @@ MTree* cp(PointSet P) {
     return T;
 }
 
-int main() {
+/* int main() {
     //int N = 4;
     int N = pow(2, 15);
     PointSet points = generate_points(N);
@@ -249,7 +249,7 @@ int main() {
     for (auto p : points) {
         cout << p.first << '-' << p.second << endl;
     } 
-    */
+    
    MTree* T = cp(points);
    return 0;
-}
+} */
