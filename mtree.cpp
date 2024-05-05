@@ -3,22 +3,38 @@ using namespace std;
 
 typedef pair<double,double> point;
 
-struct entry;
-
+// Forward declaration
 struct Node;
 
-struct MTree {
-    Node* root;
-
-    MTree() : root(nullptr) {}
+struct entry{
+    point p;
+    double radius;
+    Node* a; // Pointer to Node
 };
 
 struct Node{
     vector<entry> entries;
 };
 
-struct entry{
-    point p;
-    double radius;
-    MTree* a; // Pointer to MTree
+struct MTree {
+    Node* root;
+
+    MTree() : root(nullptr) {}
+
+    int height() {
+        if (!root) return 0;
+        return heightUtil(root);
+    }
+
+private:
+    int heightUtil(Node* node) {
+        if (!node) return 0;
+        int maxHeight = 0;
+        for (const entry& e : node->entries) {
+            if (e.a)
+                maxHeight = max(maxHeight, 1 + heightUtil(e.a));
+        }
+        return maxHeight;
+    }
 };
+
