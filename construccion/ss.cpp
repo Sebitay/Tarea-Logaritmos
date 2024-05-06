@@ -4,7 +4,7 @@
 #include <cmath>
 using namespace std;
 
-int B = 10;
+int B = 4096/sizeof(entry);
 int b = B/2;
 
 struct cluster{
@@ -75,7 +75,6 @@ cluster vecino(vector<cluster> clusters, cluster C){
     return vecino;
 }
 
-
 // FUNCION PARA ENCONTRAR EL PAR DE CLUSTERS MAS CERCANOS
 pair<cluster, cluster> par_mas_cercano(vector<cluster> clusters){
     double best_dist = cluster_dist(clusters[0], clusters[1]);
@@ -99,6 +98,8 @@ pair<cluster, cluster> par_mas_cercano(vector<cluster> clusters){
     }
     return best_pair;
 }
+
+
 
 double covering_radius(set<point> points){
     double best_radius = 1e9;
@@ -206,18 +207,18 @@ vector<cluster> gen_cluster(cluster Cin){
 };
 
 
-entry output_hoja(cluster Cin, Node& hoja){
+entry output_hoja(cluster Cin, Node *hoja){
     double r = 0;
     for (auto p : Cin.points){
-        hoja.entries.push_back({p, 0, nullptr});
+        hoja->entries.push_back({p, 0, nullptr});
         r = max(r, dist(p, Cin.medoide));
     }
-    hoja.is_leaf = true;
-    return entry{Cin.medoide, r, &hoja};
+    hoja->is_leaf = true;
+    return entry{Cin.medoide, r, hoja};
 }
 
 
-entry output_interno(Node Cmra, Node& interno){
+entry output_interno(Node Cmra, Node *interno){
     set<point> Cin;
     double R = 0;
     vector<entry> entries = Cmra.entries;
@@ -226,30 +227,30 @@ entry output_interno(Node Cmra, Node& interno){
     cluster Cin_cluster = cluster(Cin);
     for (auto entry : entries){
         R = max(R, dist(entry.p, Cin_cluster.medoide) + entry.radius);
-        interno.entries.push_back({entry.p, entry.radius, entry.a});
+        interno->entries.push_back({entry.p, entry.radius, entry.a});
         if(entry.a->is_leaf)
             cout << "hoja " <<entry.a->entries.size() << endl;
         else
             cout << "interno " <<entry.a->entries.size() << endl;
     }
-    return entry{Cin_cluster.medoide, R, &interno};
+    return entry{Cin_cluster.medoide, R, interno};
 }
 
-Node *ss(set<point> P, vector<Node>& hojas, vector<Node>& internos){
+Node *ss(set<point> P, vector<Node*>& hojas, vector<Node*>& internos){
     cluster Cin = cluster(P);
     int hoja_i = 0, interno_i = 0;
     if (Cin.points.size() <= B){
         output_hoja(Cin, hojas[hoja_i]);
-        return &hojas[hoja_i];
+        return hojas[hoja_i];
     }
     vector<cluster> Cout = gen_cluster(Cin);
     Node C = Node();
 
     cout << "--- creacion hojas ---" << endl;
-    for (auto c : Cout){
+    for (cluster c : Cout){
         C.entries.push_back(output_hoja(c, hojas[hoja_i]));
         cout << "actual " << C.entries[hoja_i].a->entries.size() << " - primero " << C.entries[0].a->entries.size() << endl;
-        hojas.push_back(Node());
+        hojas.push_back(new Node());
         hoja_i++;
     }
     cout << "----------------------" << endl;
@@ -258,7 +259,7 @@ Node *ss(set<point> P, vector<Node>& hojas, vector<Node>& internos){
     cout << "--- hojas en C ---" << endl;
     for (auto entry : C.entries){
         cout << "en C "<< entry.a->entries.size() << endl;
-        cout << "hoja "<< hojas[i].entries.size() << endl;
+        cout << "hoja "<< hojas[i]->entries.size() << endl;
         i++;
     }
     cout << "------------------" << endl;
@@ -286,7 +287,7 @@ Node *ss(set<point> P, vector<Node>& hojas, vector<Node>& internos){
         for(auto node : Cmra){
             cout << "--- output_interno --- " << endl;
             C.entries.push_back(output_interno(node, internos[interno_i]));
-            internos.push_back(Node());
+            internos.push_back(new Node());
             interno_i++;
             cout << "---------------------- " << endl;
         }
@@ -295,19 +296,19 @@ Node *ss(set<point> P, vector<Node>& hojas, vector<Node>& internos){
     cout << "11" << endl;
     output_interno(C, internos[interno_i]);
     cout << "12" << endl;
-    cout << internos[interno_i].entries.size() << endl;
-    return &internos[interno_i];
+    cout << internos[interno_i]->entries.size() << endl;
+    return internos[interno_i];
 }
 
 int main(){
-    cout<< sizeof(point) << endl;
-    int N = 100;
+    cout<< sizeof(entry) << endl;
+    int N = pow(2,12);
     set<point> P = generate_points(N);
-    vector<Node> hojas;
-    vector<Node> internos;
+    vector<Node*> hojas;
+    vector<Node*> internos;
     MTree T;
-    hojas.push_back(Node());
-    internos.push_back(Node());
+    hojas.push_back(new Node());
+    internos.push_back(new Node());
     T.root = ss(P, hojas, internos);
     cout << T.root->entries.size() << endl;
     Query q = {{0.5, 0.5}, 0.5};
