@@ -1,15 +1,11 @@
-#include "../mtree.cpp"
 #include "../plot.cpp"
+#include "../search.cpp"
 #include <bits/stdc++.h>
 #include <cmath>
 using namespace std;
 
-int B = 4096/sizeof(point);
+int B = 10;
 int b = B/2;
-
-double dist(point p, point q){
-    return sqrt((p.first - q.first)*(p.first - q.first) + (p.second - q.second)*(p.second - q.second));
-}
 
 struct cluster{
     set<point> points;
@@ -210,80 +206,112 @@ vector<cluster> gen_cluster(cluster Cin){
 };
 
 
-entry output_hoja(cluster Cin){
+entry output_hoja(cluster Cin, Node& hoja){
     double r = 0;
-    MTree C;
-    C.root = new Node;
     for (auto p : Cin.points){
-        C.root->entries.push_back({p, 0, nullptr});
+        hoja.entries.push_back({p, 0, nullptr});
         r = max(r, dist(p, Cin.medoide));
     }
-    return entry{Cin.medoide, r, &C};
+    hoja.is_leaf = true;
+    return entry{Cin.medoide, r, &hoja};
 }
 
 
-entry output_interno(MTree Cmra){
-    set<point> Cin; 
-    MTree C;
+entry output_interno(Node Cmra, Node& interno){
+    set<point> Cin;
     double R = 0;
-    C.root = new Node;
-    for (auto entry : Cmra.root->entries)
+    vector<entry> entries = Cmra.entries;
+    for (auto entry : entries)
         Cin.insert(entry.p);
     cluster Cin_cluster = cluster(Cin);
-    for (auto entry : Cmra.root->entries){
+    for (auto entry : entries){
         R = max(R, dist(entry.p, Cin_cluster.medoide) + entry.radius);
-        C.root->entries.push_back({entry.p, entry.radius, entry.a});
+        interno.entries.push_back({entry.p, entry.radius, entry.a});
+        if(entry.a->is_leaf)
+            cout << "hoja " <<entry.a->entries.size() << endl;
+        else
+            cout << "interno " <<entry.a->entries.size() << endl;
     }
-    return entry{Cin_cluster.medoide, R, &C};
+    return entry{Cin_cluster.medoide, R, &interno};
 }
 
-MTree *ss(set<point> P){
-    cout<< '1' << endl;
+Node *ss(set<point> P, vector<Node>& hojas, vector<Node>& internos){
     cluster Cin = cluster(P);
-    cout<< '2' << endl;
-    if (Cin.points.size() <= B)
-        return output_hoja(Cin).a;
-    cout<< '3' << endl;
+    int hoja_i = 0, interno_i = 0;
+    if (Cin.points.size() <= B){
+        output_hoja(Cin, hojas[hoja_i]);
+        return &hojas[hoja_i];
+    }
     vector<cluster> Cout = gen_cluster(Cin);
-    cout<< '4' << endl;
-    MTree C;
-    cout<< '5' << endl;
-    C.root = new Node;
-    for (auto c : Cout)
-        C.root->entries.push_back(output_hoja(c)); // se cae aca :(
+    Node C = Node();
+
+    cout << "--- creacion hojas ---" << endl;
+    for (auto c : Cout){
+        C.entries.push_back(output_hoja(c, hojas[hoja_i]));
+        cout << "actual " << C.entries[hoja_i].a->entries.size() << " - primero " << C.entries[0].a->entries.size() << endl;
+        hojas.push_back(Node());
+        hoja_i++;
+    }
+    cout << "----------------------" << endl;
+
+    int i = 0;
+    cout << "--- hojas en C ---" << endl;
+    for (auto entry : C.entries){
+        cout << "en C "<< entry.a->entries.size() << endl;
+        cout << "hoja "<< hojas[i].entries.size() << endl;
+        i++;
+    }
+    cout << "------------------" << endl;
+
+
     cout<< '6' << endl;
-    while (C.root->entries.size() > B){
-        vector<MTree> Cmra;
+    while (C.entries.size() > B){
+        vector<Node> Cmra;
         set<point> Cin;
-        for (auto entry : C.root->entries)
+        for (auto entry : C.entries)
             Cin.insert(entry.p);
         cout<< '7' << endl;
         Cout = gen_cluster(cluster(Cin));
         cout<< '8' << endl;
         for (auto c : Cout){
-            MTree s = MTree({});
-            for (auto entry : C.root->entries){
+            Node s = Node();
+            for (auto entry : C.entries){
                 if (c.points.find(entry.p) != c.points.end())
-                    s.root->entries.push_back(entry);
+                    s.entries.push_back(entry);
             }
             Cmra.push_back(s);
         }
         cout<< '9' << endl;
-        C.root->entries.clear();
-        for(auto tree : Cmra){
-            C.root->entries.push_back(output_interno(tree));
+        C.entries.clear();
+        for(auto node : Cmra){
+            cout << "--- output_interno --- " << endl;
+            C.entries.push_back(output_interno(node, internos[interno_i]));
+            internos.push_back(Node());
+            interno_i++;
+            cout << "---------------------- " << endl;
         }
         cout << "10" << endl;
     }
     cout << "11" << endl;
-    entry root = output_interno(C);
+    output_interno(C, internos[interno_i]);
     cout << "12" << endl;
-    return root.a;
+    cout << internos[interno_i].entries.size() << endl;
+    return &internos[interno_i];
 }
 
 int main(){
     cout<< sizeof(point) << endl;
-    set<point> P = generate_points(pow(2, 12));
-    MTree *T = ss(P);
+    int N = 100;
+    set<point> P = generate_points(N);
+    vector<Node> hojas;
+    vector<Node> internos;
+    MTree T;
+    hojas.push_back(Node());
+    internos.push_back(Node());
+    T.root = ss(P, hojas, internos);
+    cout << T.root->entries.size() << endl;
+    Query q = {{0.5, 0.5}, 0.5};
+    set<point> s = search(T.root, q);
+    cout << "result = "<< s.size() <<", expected = " << N*3.14*0.25 << endl;
     return 0;
 }
