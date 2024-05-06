@@ -184,7 +184,7 @@ MTree* cp(PointSet P) {
         }
     }
     T->root = Tsup->root;
-    
+
     // 12. Se setean los radios cobertores resultantes para cada entrada en este árbol.
     // hacerlo recursivamente para todas las entradas (revisar esto)
     for (auto& e : T->root->entries) {
@@ -201,12 +201,4 @@ MTree* cp(PointSet P) {
     
     // 13. Se retorna T
     return T;
-}
-
-int main() {
-    int N = pow(2, 15);
-    PointSet points = generate_points(N);    
-    MTree* T = cp(points);
-    cout<<"fin"<<endl;
-    return 0;
 }
