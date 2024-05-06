@@ -100,6 +100,68 @@ pair<cluster, cluster> par_mas_cercano(vector<cluster> clusters){
 }
 
 
+pair<cluster, cluster> par_mas_cercano_dc(vector<cluster> clusters) {
+    // Base case: If there are only two clusters, return the closest pair
+    if (clusters.size()<= 3) {
+        return par_mas_cercano(clusters);
+    }
+
+    // Sort clusters based on medoide's x-coordinate
+    sort(clusters.begin(), clusters.end(), [](const cluster& a, const cluster& b) {
+        return a.medoide.first < b.medoide.first;
+    });
+
+    // Divide the clusters into two halves
+    int mid = clusters.size() / 2;
+    vector<cluster> left_clusters(clusters.begin(), clusters.begin() + mid);
+    vector<cluster> right_clusters(clusters.begin() + mid, clusters.end());
+    
+
+    // Recursively find closest pair of clusters in each half
+    pair<cluster, cluster> closest_left = par_mas_cercano_dc(left_clusters);
+    pair<cluster, cluster> closest_right = par_mas_cercano_dc(right_clusters);
+
+
+    // Find the closest pair that spans both halves
+    double min_dist = min(cluster_dist(closest_left.first, closest_left.second),
+                          cluster_dist(closest_right.first, closest_right.second));
+
+
+    // Find the clusters within the strip
+    vector<cluster> strip;
+    for (const auto& c : clusters) {
+        if (abs(c.medoide.first - clusters[mid].medoide.first) < min_dist) {
+            strip.push_back(c);
+        }
+    }
+
+    // Find the closest pair in the strip
+    pair<cluster, cluster> closest_in_strip = {cluster({}), cluster({})};
+    min_dist = DBL_MAX;
+    if (!strip.empty()) {
+        for (size_t i = 0; i < strip.size(); ++i) {
+            for (size_t j = i + 1; j < strip.size() && strip[j].medoide.second - strip[i].medoide.second < min_dist; ++j) {
+                double dist = cluster_dist(strip[i], strip[j]);
+                if (dist < min_dist) {
+                    min_dist = dist;
+                    closest_in_strip = {strip[i], strip[j]};
+                }
+            }
+            // Early termination if min_dist becomes 0
+            if (min_dist == 0) {
+                break;
+            }
+        }
+    }
+
+    // Return the closest pair among the three possibilities
+    if (min(cluster_dist(closest_left.first, closest_left.second), cluster_dist(closest_right.first, closest_right.second)) < min_dist) {
+        return min(cluster_dist(closest_left.first, closest_left.second), cluster_dist(closest_right.first, closest_right.second)) == cluster_dist(closest_left.first, closest_left.second) ? closest_left : closest_right;
+    } else {
+        return closest_in_strip;
+    }
+}
+
 
 double covering_radius(set<point> points){
     double best_radius = 1e9;
@@ -174,7 +236,7 @@ vector<cluster> gen_cluster(cluster Cin){
     cout<< '2' << endl;
     while(C.size() > 1){
         cout<< C.size() << endl;
-        pair<cluster, cluster> pares_cercanos = par_mas_cercano(C);
+        pair<cluster, cluster> pares_cercanos = par_mas_cercano_dc(C);
         if(pares_cercanos.first.points.size() + pares_cercanos.second.points.size() <= B){
             C.erase(remove(C.begin(), C.end(), pares_cercanos.first), C.end());
             C.erase(remove(C.begin(), C.end(), pares_cercanos.second), C.end());
@@ -302,7 +364,7 @@ Node *ss(set<point> P, vector<Node*>& hojas, vector<Node*>& internos){
 
 int main(){
     cout<< sizeof(entry) << endl;
-    int N = pow(2,12);
+    int N = pow(2,15);
     set<point> P = generate_points(N);
     vector<Node*> hojas;
     vector<Node*> internos;
