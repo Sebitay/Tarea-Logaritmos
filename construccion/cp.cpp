@@ -16,10 +16,10 @@ double distance(point p1, point p2) {
 }
 
 MTree* cp(PointSet P) {
-    
     // Si |P| ≤ B, se crea un árbol T, se insertan todos los puntos a T y se retorna T:
+    cout<< "inicio" << endl;
     if (P.size() <= B) {
-        cout<<'1'<<endl;
+        cout<<"paso 1"<<endl;
         MTree* T = new MTree;
         T->root = new Node;
         for (auto& p : P) {
@@ -31,78 +31,80 @@ MTree* cp(PointSet P) {
         }
         return T;
     }
-
-    // 2. De manera aleatoria se eligen k = min(B, n/B) puntos de P, que los llamaremos samples
-    // pf1, . . . , pfk. Se insertan en un conjunto F de samples.
     int k = min(B, static_cast<int>(P.size() / B));
     vector<point> F;
-    for (int i = 0; i < k; i++) {
-        int idx = rand() % P.size();
-        auto it = next(P.begin(), idx);
-        F.push_back(*it);
-    }
-
-    // 3. Se le asigna a cada punto en P su sample más cercano. Con eso se puede construir k conjuntos
-    // F1, . . . , Fk.
     vector<PointSet> Fk(k);
-    for (auto p : P) {
-        double min_dist = numeric_limits<double>::max();
-        int idx = -1;
-        int i = 0;
-        for (auto& Fp : F) {
-            // calcular la distancia entre p y F[i]:
-            double dist = distance(p, Fp);
-
-            // actualizar el mínimo:
-            if (dist < min_dist) {
-                min_dist = dist;
-                idx = i;
-            }
-            i++;
-        }
-        // añadir p a Fk[idx]:
-        Fk[idx].insert(p);
-    }
-
-    // 4. Etapa de redistribución: Si algún Fj es tal que |Fj| < B:
-    for (int i = 0; i < k; i++) {
-        if (Fk[i].size() < B) {
-            // 4.1 Quitamos pfj de F
-            F.erase(find(F.begin(), F.end(), F[i]));
-
-            // 4.2 Por cada p ∈ Fj, le buscamos el sample pfl más cercano de F y lo añadimos a su conjunto Fl.
-            for (auto p : Fk[i]) {
-                double min_dist = numeric_limits<double>::max();
-                int idx = -1;
-                for (int j = 0; j < k; j++) {
-                    if (j == i) continue; // no considerar el mismo sample
-                    // calcular la distancia entre p y F:
-                    double dist = distance(p, F[j]);
-                    // actualizar el mínimo:
-                    if (dist < min_dist && dist != 0) {
-                        min_dist = dist;
-                        idx = j;
-                    }
-                }
-                // añadir p a Fk[idx]:
-                Fk[idx].insert(p);
-            }
-
-            // Vaciamos F
+    do{
+        cout<< "paso 2" << endl;
+        // 2. De manera aleatoria se eligen k = min(B, n/B) puntos de P, que los llamaremos samples
+        // pf1, . . . , pfk. Se insertan en un conjunto F de samples.
+        F.clear();
+        for (int i = 0; i < k; i++) {
             Fk[i].clear();
+            int idx = rand() % P.size();
+            auto it = next(P.begin(), idx);
+            F.push_back(*it);
         }
-    }
 
-    // 5. Si |F| = 1, volver al paso 2.
-    if (F.size() == 1) {
-        return cp(P);
-    }
+        // 3. Se le asigna a cada punto en P su sample más cercano. Con eso se puede construir k conjuntos
+        // F1, . . . , Fk.
+        for (auto p : P) {
+            double min_dist = numeric_limits<double>::max();
+            int idx = -1;
+            int i = 0;
+            for (auto& Fp : F) {
+                // calcular la distancia entre p y F[i]:
+                double dist = distance(p, Fp);
+
+                // actualizar el mínimo:
+                if (dist < min_dist) {
+                    min_dist = dist;
+                    idx = i;
+                }
+                i++;
+            }
+            // añadir p a Fk[idx]:
+            Fk[idx].insert(p);
+            
+        }
+        // 4. Etapa de redistribución: Si algún Fj es tal que |Fj| < B:
+        for (int i = 0; i < k; i++) {
+            if (Fk[i].size() < B) {
+                cout<< "paso 4"<< endl;
+                // 4.1 Quitamos pfj de F
+                F.erase(remove(F.begin(), F.end(), F[i]));
+
+                // 4.2 Por cada p ∈ Fj, le buscamos el sample pfl más cercano de F y lo añadimos a su conjunto Fl.
+                for (auto p : Fk[i]) {
+                    double min_dist = numeric_limits<double>::max();
+                    int idx = -1;
+                    for (int j = 0; j < k; j++) {
+                        if (j == i) continue; // no considerar el mismo sample
+                        // calcular la distancia entre p y F:
+                        double dist = distance(p, F[j]);
+                        // actualizar el mínimo:
+                        if (dist < min_dist && dist != 0) {
+                            min_dist = dist;
+                            idx = j;
+                        }
+                    }
+                    // añadir p a Fk[idx]:
+                    Fk[idx].insert(p);
+                }
+
+                // Vaciamos F
+                Fk[i].clear();
+            }
+        }
+    }while(F.size() == 1);
 
     // 6. Se realiza recursivamente el algoritmo CP en cada Fj, obteniendo el árbol Tj
     vector<MTree> Tk(k);
-    cout<<'6'<<endl;
+    cout<< "paso 6: k=" << k << endl;
     for (int j = 0; j < k; j++) {
+        cout<< Fk[j].size() << endl;
         if (Fk[j].size() == 0) continue;
+        cout<<"recursion"<<endl;
         MTree* Tj = cp(Fk[j]);
         Tk[j] = *Tj;
   
@@ -110,12 +112,12 @@ MTree* cp(PointSet P) {
         // con sus subárboles como nuevos Tj, se añaden los puntos pertinentes a F.
         // revisar
         if (Tj->root->entries.size() < b) {
-            cout<<'7'<<endl;
+            cout<<"paso 7"<<endl;
             // Se quita la raíz de Tj
             Node* root = Tj->root;
             Tj->root = nullptr;
             // Se elimina pfj de F
-            F.erase(find(F.begin(), F.end(), F[j]));
+            F.erase(remove(F.begin(), F.end(), F[j]));
             // Se trabaja con los subárboles de Tj como nuevos Tj
             for (auto& e : Tj->root->entries) {
                 Tk.push_back(*cp(Fk[j]));
@@ -129,7 +131,7 @@ MTree* cp(PointSet P) {
 
     // 8. Etapa de balanceamiento: Se define h como la altura mínima de los árboles Tj. Se define T′
     // inicialmente como un conjunto vacío.
-    cout<<'8'<<endl;
+    cout<<"paso 8"<<endl;
     int h = numeric_limits<int>::max();
     for (int j = 0; j < k; j++) {
         h = min(h, Tk[j].height());
