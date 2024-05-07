@@ -7,7 +7,7 @@ using namespace std;
 typedef pair<double, double> point;
 typedef set<point> PointSet;
 
-int B = 4096/sizeof(point);
+int B = 4096/sizeof(entry);
 int b = B/2;
 
 
@@ -99,18 +99,20 @@ MTree* cp(PointSet P) {
     }while(F.size() == 1);
 
     // 6. Se realiza recursivamente el algoritmo CP en cada Fj, obteniendo el árbol Tj
-    vector<MTree> Tk(k);
+    vector<MTree*> Tk(k);
     cout<< "paso 6: k=" << k << endl;
     for (int j = 0; j < k; j++) {
         cout<< Fk[j].size() << endl;
         if (Fk[j].size() == 0) continue;
         cout<<"recursion"<<endl;
         MTree* Tj = cp(Fk[j]);
-        Tk[j] = *Tj;
+        cout<<'b'<<endl;
+        Tk[j] = Tj;
   
         // 7. Si la raíz del árbol es de un tamaño menor a b, se quita esa raíz, se elimina pfj de F y se trabaja
         // con sus subárboles como nuevos Tj, se añaden los puntos pertinentes a F.
         // revisar
+        cout<<Tj->root->entries.size()<<endl;
         if (Tj->root->entries.size() < b) {
             cout<<"paso 7"<<endl;
             // Se quita la raíz de Tj
@@ -120,7 +122,7 @@ MTree* cp(PointSet P) {
             F.erase(remove(F.begin(), F.end(), F[j]));
             // Se trabaja con los subárboles de Tj como nuevos Tj
             for (auto& e : Tj->root->entries) {
-                Tk.push_back(*cp(Fk[j]));
+                Tk.push_back(cp(Fk[j]));
             }
             // Se añaden los puntos pertinentes a F
             for (auto& e : Tj->root->entries) {
@@ -134,15 +136,15 @@ MTree* cp(PointSet P) {
     cout<<"paso 8"<<endl;
     int h = numeric_limits<int>::max();
     for (int j = 0; j < k; j++) {
-        h = min(h, Tk[j].height());
+        h = min(h, Tk[j]->height());
     }
     // definir T'
-    vector<MTree> Tprime;
+    vector<MTree*> Tprime;
 
     // 9. Por cada Tj, si su altura es igual a h, se añade a T′.
     cout<<'9'<<endl;
     for (int j = 0; j < k; j++) {
-        if (Tk[j].height() == h) {
+        if (Tk[j]->height() == h) {
             Tprime.push_back(Tk[j]);
         } else {
             // 9.1 Se borra el punto pertinente en F.
@@ -150,11 +152,11 @@ MTree* cp(PointSet P) {
 
             // 9.2 Se hace una búsqueda exhaustiva en Tj de todos los subárboles T1', . . . , Tp′ de altura igual
             // a h. Se insertan estos árboles a T′
-            for (auto& e : Tk[j].root->entries) {
+            for (auto& e : Tk[j]->root->entries) {
                 MTree* Tp = new MTree;
                 Tp->root = e.a;
                 if (Tp->height() == h) {
-                    Tprime.push_back(*Tp);
+                    Tprime.push_back(Tp);
                     // 9.3 Se insertan los puntos raíz de T1′, . . . , Tp′, p′f1, . . . , p′fp en F
                     F.push_back(e.p);
                 }
@@ -163,14 +165,16 @@ MTree* cp(PointSet P) {
     }
 
     // 10. Se define Tsup como el resultado de la llamada al algoritmo CP aplicado a F.
+    cout<<"10"<<endl;
     PointSet F_set(F.begin(), F.end());
     MTree* Tsup = cp(F_set);
 
     // 11. Se une cada Tj ∈ T′ a su hoja en Tsup correspondiente al punto pfj ∈ F, obteniendo un nuevo árbol T.
+    cout<<"11"<<endl;
     MTree* T = new MTree;
     for (auto& Tj : Tprime) {
         // buscar el punto pfj en F
-        for (auto& e : Tj.root->entries) {
+        for (auto& e : Tj->root->entries) {
             // buscar el punto en F
             auto it = F_set.find(e.p);
             if (it != F_set.end()) {
@@ -189,6 +193,7 @@ MTree* cp(PointSet P) {
 
     // 12. Se setean los radios cobertores resultantes para cada entrada en este árbol.
     // hacerlo recursivamente para todas las entradas (revisar esto)
+    cout<<"12"<<endl;
     for (auto& e : T->root->entries) {
         if (e.a) {
             // calcular el radio cobertor
@@ -202,5 +207,6 @@ MTree* cp(PointSet P) {
     }
     
     // 13. Se retorna T
+    cout<<"13"<<endl;
     return T;
 }
