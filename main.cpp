@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
 
     // construir el árbol:
     string f = argv[1];
-    MTree* T;
+    MTree T;
     if (f == "cp") {
         T = cp(points);
     } else if (f == "ss") {
@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
         PointSet result = search(T, query);
     } */
     Query q = {{0.5, 0.5}, 0.5};
-    set<point> s = search(T->root, q);
+    set<point> s = search(T.root, q);
     cout << "result = "<< s.size() <<", expected = " << N*3.14*0.25 << endl;
 
     cout<<"Done!"<<endl;
