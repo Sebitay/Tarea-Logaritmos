@@ -155,7 +155,7 @@ MTree cp(PointSet P) {
 
             // 9.2 Se hace una búsqueda exhaustiva en Tj de todos los subárboles T1', . . . , Tp′ de altura igual
             // a h. Se insertan estos árboles a T′
-            // ESTE PASO REVISARLO PQ NI IDEA QUE HACE
+            // Revisar que tan exhaustiva es la búsqueda (solo las entries o recursivo)
             for (auto& e : Tk[j].root->entries) {
                 MTree *Tp = new MTree;
                 Tp->root = e.a;
