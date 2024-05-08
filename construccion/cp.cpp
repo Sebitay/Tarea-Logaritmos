@@ -66,10 +66,10 @@ MTree cp(PointSet P) {
             Fk[idx].insert(p);
             
         }
-        // 4. Etapa de redistribución: Si algún Fj es tal que |Fj| < B:
+        // 4. Etapa de redistribución: Si algún Fj es tal que |Fj| < b:
         cout<<"k: "<< k << endl;
         for (int i = 0; i < k; i++) {
-            cout<< "paso 4: "<< Fk[i].size() << " " << B <<endl;
+            cout<< "paso 4: "<< Fk[i].size() << " " << b <<endl;
             if (Fk[i].size() < b) {
                 // 4.1 Quitamos pfj de F
                 F.erase(remove(F.begin(), F.end(), F[i]));
@@ -97,7 +97,7 @@ MTree cp(PointSet P) {
             }
         }
         cout<< F.size() << endl;
-    }while(F.size() == 1);
+    } while(F.size() == 1);
 
     // 6. Se realiza recursivamente el algoritmo CP en cada Fj, obteniendo el árbol Tj
     vector<MTree> Tk;
@@ -121,6 +121,7 @@ MTree cp(PointSet P) {
                 Tk.push_back(cp(Fk[j]));
             }
             // Se añaden los puntos pertinentes a F
+            // (revisar si estos son los puntos pertienentes)
             for (auto& e : Tj.root->entries) {
                 F.push_back(e.p);
             }
@@ -143,23 +144,27 @@ MTree cp(PointSet P) {
     vector<MTree> Tprime;
 
     // 9. Por cada Tj, si su altura es igual a h, se añade a T′.
+    // Si no, 9.1, 9.2 y 9.3
     cout<<"paso 9"<<endl;
     for (int j = 0; j < k; j++) {
         if (Tk[j].height() == h) {
             Tprime.push_back(Tk[j]);
         } else {
             // 9.1 Se borra el punto pertinente en F.
-            F.erase(find(F.begin(), F.end(), F[j]));
+            F.erase(remove(F.begin(), F.end(), F[j]));
 
             // 9.2 Se hace una búsqueda exhaustiva en Tj de todos los subárboles T1', . . . , Tp′ de altura igual
             // a h. Se insertan estos árboles a T′
+            // ESTE PASO REVISARLO PQ NI IDEA QUE HACE
             for (auto& e : Tk[j].root->entries) {
                 MTree *Tp = new MTree;
                 Tp->root = e.a;
                 if (Tp->height() == h) {
                     Tprime.push_back(*Tp);
                     // 9.3 Se insertan los puntos raíz de T1′, . . . , Tp′, p′f1, . . . , p′fp en F
-                    F.push_back(e.p);
+                    for (auto& e : Tp->root->entries) {
+                        F.push_back(e.p);
+                    }
                 }
             }         
         }
@@ -171,6 +176,7 @@ MTree cp(PointSet P) {
     MTree Tsup = cp(F_set);
 
     // 11. Se une cada Tj ∈ T′ a su hoja en Tsup correspondiente al punto pfj ∈ F, obteniendo un nuevo árbol T.
+    // REVISAR BIEN ESTE PASO PQ NI IDEA SI LO ESTA HACIENDO BIEN
     cout<<"paso 11"<<endl;
     MTree *T = new MTree;
     cout<<"paso 11.1"<<endl;
@@ -196,7 +202,7 @@ MTree cp(PointSet P) {
     T->root = Tsup.root;
 
     // 12. Se setean los radios cobertores resultantes para cada entrada en este árbol.
-    // hacerlo recursivamente para todas las entradas (revisar esto)
+    // REVISAR SI DEBE SER PARA LAS ENTRADAS DE T->ROOT O PARA TODO EL ARBOL.
     cout<<"paso 12"<<endl;
     for (auto& e : T->root->entries) {
         if (e.a) {
