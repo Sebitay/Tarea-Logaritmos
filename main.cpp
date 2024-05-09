@@ -67,8 +67,22 @@ int main(int argc, char* argv[]) {
     auto minutes = std::chrono::duration_cast<std::chrono::minutes>(duration);
     duration -= minutes;
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
-    cout << "Tiempo de construccion del árbol: " << hours.count() << " horas, " << minutes.count() << " minutos y " << seconds.count() << " segundos" << std::endl;
+    cout << "Tiempo de construccion del arbol: " << hours.count() << " horas, " << minutes.count() << " minutos y " << seconds.count() << " segundos" << std::endl;
 
+    // iterar sobre todo el arbol, mostrando su radio cobertor:
+    stack<Node*> st;
+    st.push(T.root);
+    while (!st.empty()) {
+        Node* n = st.top();
+        st.pop();
+        for (entry e : n->entries) {
+            cout << "Radio cobertor: " << e.radius << endl;
+            cout<<"a: "<<e.a<<endl;
+            if (e.a) {
+                st.push(e.a);
+            }
+        }
+    }
 
     // hacer consultas:
     /* PointSet Q = generate_points(100);
