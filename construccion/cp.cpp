@@ -31,6 +31,18 @@ void setCoveringRadius(Node& node) {
     }
 }
 
+void setTsupPointers(Node *Tsup, vector<MTree>& Tprime, vector<point>& F){
+    for(auto& entry : Tsup->entries){
+        if(entry.a)
+            setTsupPointers(entry.a, Tprime, F);
+        else{
+            auto it = find(F.begin(), F.end(), entry.p);
+            // poner como hijo el subarbol correspondiente
+            entry.a = Tprime[distance(F.begin(), it)].root;
+        }
+    }
+};
+
 vector<MTree> subtrees_h(Node& node, int h) {
     // crear una cola
     queue<Node*> q;
@@ -54,7 +66,7 @@ vector<MTree> subtrees_h(Node& node, int h) {
         q.pop();
     }
     return subtrees;
-}
+};
 
 MTree cp(PointSet P) {
     // Si |P| ≤ B, se crea un árbol T, se insertan todos los puntos a T y se retorna T:
@@ -210,16 +222,7 @@ MTree cp(PointSet P) {
     /* cout<<"paso 11"<<endl; */
     MTree *T = new MTree;
     vector<entry> entries;
-    for (auto& e : Tsup.root->entries) {
-        entry new_entry;
-        new_entry.p = e.p;
-        new_entry.radius = e.radius;
-        new_entry.a = nullptr;  
-        // buscar la posicion de e.p en F
-        auto it = find(F.begin(), F.end(), new_entry.p);
-        // poner como hijo el subarbol correspondiente
-        new_entry.a = Tk[distance(F.begin(), it)].root;        
-    }
+    setTsupPointers(Tsup.root, Tprime, F);
     T->root = Tsup.root;
 
     // 12. Se setean los radios cobertores resultantes para cada entrada en este árbol.
