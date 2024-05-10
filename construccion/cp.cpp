@@ -24,11 +24,36 @@ void setCoveringRadius(Node& node) {
                 double dist = distance(e.p, e2.p);
                 max_dist = max(max_dist, dist);
             }
-            cout<<"max_dist: "<<max_dist<<endl;
+            // cout<<"max_dist: "<<max_dist<<endl;
             e.radius = max_dist;
             setCoveringRadius(*e.a);
         }
     }
+}
+
+vector<MTree> subtrees_h(Node& node, int h) {
+    // crear una cola
+    queue<Node*> q;
+    vector<MTree> subtrees;
+    q.push(&node);
+    while (!q.empty()) {
+        // sacar el primer elemento de la cola
+        for (auto& e : q.front()->entries) {
+            if (e.a) {
+                MTree T = MTree();
+                T.root = e.a;
+                int height = T.height();
+                if (height != h) {
+                    // añadir a la cola
+                    q.push(e.a);
+                } else {
+                    subtrees.push_back(T);
+                }      
+            }
+        }
+        q.pop();
+    }
+    return subtrees;
 }
 
 MTree cp(PointSet P) {
@@ -145,6 +170,7 @@ MTree cp(PointSet P) {
     for (int j = 0; j < k; j++) {
         h = min(h, Tk[j].height());
     }
+    //cout<<"h: "<<h<<endl; 
     // definir T'
     vector<MTree> Tprime;
 
@@ -160,49 +186,39 @@ MTree cp(PointSet P) {
 
             // 9.2 Se hace una búsqueda exhaustiva en Tj de todos los subárboles T1', . . . , Tp′ de altura igual
             // a h. Se insertan estos árboles a T′
-            // Revisar que tan exhaustiva es la búsqueda (solo las entries o recursivo)
-            // idea: hacer una busqueda de todos los subarboles hasta que la altura sea menor a h
-            for (auto& e : Tk[j].root->entries) {
-                MTree *Tp = new MTree;
-                Tp->root = e.a;
-                if (Tp->height() == h) {
-                    Tprime.push_back(*Tp);
-                    // 9.3 Se insertan los puntos raíz de T1′, . . . , Tp′, p′f1, . . . , p′fp en F
-                    for (auto& e : Tp->root->entries) {
-                        F.push_back(e.p);
-                    }
+            // split Tj into p sub-trees T1 ,..., Tp of height hmi
+            vector<MTree> Tp = subtrees_h(*Tk[j].root, h);
+            for (auto& T : Tp) {
+                Tprime.push_back(T);
+            }
+
+            // 9.3 Se añaden los puntos pertinentes a F.
+            for (auto& T : Tp) {
+                for (auto& e : T.root->entries) {
+                    F.push_back(e.p);
                 }
-            }         
+            }
         }
     }
 
     // 10. Se define Tsup como el resultado de la llamada al algoritmo CP aplicado a F.
     /* cout<<"paso 10"<<endl; */
     PointSet F_set(F.begin(), F.end());
-    //cout<<"F_set size: "<<F_set.size()<<endl;
     MTree Tsup = cp(F_set);
-    //cout<<"Tsup heigth: "<<Tsup.height()<<endl;
 
     // 11. Se une cada Tj ∈ T′ a su hoja en Tsup correspondiente al punto pfj ∈ F, obteniendo un nuevo árbol T.
     /* cout<<"paso 11"<<endl; */
     MTree *T = new MTree;
-    for (auto& Tj : Tprime) {
-        // buscar el punto pfj en F
-        for (auto& e : Tj.root->entries) {
-            // buscar el punto en F
-            auto it = F_set.find(e.p);
-            if (it != F_set.end()) {
-                // unir Tj a su hoja en Tsup
-                // buscar el punto en Tsup
-                for (auto& e2 : Tsup.root->entries) {
-                    if (e2.p == e.p) {
-                        // antes estaba al reves
-                        e2.a = e.a;
-                        e2.radius = e.radius;
-                    }
-                }
-            }
-        }
+    vector<entry> entries;
+    for (auto& e : Tsup.root->entries) {
+        entry new_entry;
+        new_entry.p = e.p;
+        new_entry.radius = e.radius;
+        new_entry.a = nullptr;  
+        // buscar la posicion de e.p en F
+        auto it = find(F.begin(), F.end(), new_entry.p);
+        // poner como hijo el subarbol correspondiente
+        new_entry.a = Tk[distance(F.begin(), it)].root;        
     }
     T->root = Tsup.root;
 
@@ -212,6 +228,5 @@ MTree cp(PointSet P) {
 
     // 13. Se retorna T
     /* cout<<"paso 13"<<endl; */
-    cout<<"T heigth: "<<T->height()<<endl;
     return *T;
 }

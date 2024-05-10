@@ -49,9 +49,10 @@ int main(int argc, char* argv[]) {
     PointSet points = generate_points(N);
 
     // construir el árbol:
-    auto start = std::chrono::high_resolution_clock::now();
+    auto start = chrono::high_resolution_clock::now();
     string f = argv[1];
     MTree T;
+    //vector<entry>;
     if (f == "cp") {
         T = cp(points);
     } else if (f == "ss") {
@@ -60,14 +61,14 @@ int main(int argc, char* argv[]) {
         cout<<"Invalid construction function, use cp or ss"<<endl;
         return 1;
     }
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - start);
-    auto hours = std::chrono::duration_cast<std::chrono::hours>(duration);
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::seconds>(end - start);
+    auto hours = chrono::duration_cast<chrono::hours>(duration);
     duration -= hours;
-    auto minutes = std::chrono::duration_cast<std::chrono::minutes>(duration);
+    auto minutes = chrono::duration_cast<chrono::minutes>(duration);
     duration -= minutes;
-    auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
-    cout << "Tiempo de construccion del arbol: " << hours.count() << " horas, " << minutes.count() << " minutos y " << seconds.count() << " segundos" << std::endl;
+    auto seconds = chrono::duration_cast<chrono::seconds>(duration);
+    cout << "Tiempo de construccion del arbol: " << hours.count() << " horas, " << minutes.count() << " minutos y " << seconds.count() << " segundos" << endl;
 
     // iterar sobre todo el arbol, mostrando su radio cobertor:
     stack<Node*> st;
@@ -83,8 +84,10 @@ int main(int argc, char* argv[]) {
             }
         }
     }
+    cout<<"Altura del arbol: "<<T.height()<<endl;
 
     // hacer consultas:
+    // agregar tiempo de ejecucion a consultas?
     /* PointSet Q = generate_points(100);
     int r = 0.02;
     for (auto q : Q) {
