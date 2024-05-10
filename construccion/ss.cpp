@@ -1,5 +1,5 @@
-#include "../plot.cpp"
 #include "../search.cpp"
+#include "../plot.cpp"
 #include <bits/stdc++.h>
 #include <cmath>
 using namespace std;
@@ -184,9 +184,7 @@ pair<cluster, cluster> min_max_split(cluster C){
     pair<set<point>,set<point>> best_points;
     double min_radius = 1e9;
     int i = 0;
-    cout << C.points.size() << endl;
     for(auto p = C.points.begin(); p != C.points.end(); p++){
-        cout<< i++ << endl;
         for(auto q = next(p); q != C.points.end(); q++){
             if(p == q)
                 break;
@@ -229,13 +227,10 @@ pair<cluster, cluster> min_max_split(cluster C){
 
 vector<cluster> gen_cluster(cluster Cin){
     vector<cluster> C, Cout;
-    cout<< '1' << endl;
     for(auto p : Cin.points){
         C.push_back(cluster({p}));
     }
-    cout<< '2' << endl;
     while(C.size() > 1){
-        cout<< C.size() << endl;
         pair<cluster, cluster> pares_cercanos = par_mas_cercano_dc(C);
         if(pares_cercanos.first.points.size() + pares_cercanos.second.points.size() <= B){
             C.erase(remove(C.begin(), C.end(), pares_cercanos.first), C.end());
@@ -246,22 +241,19 @@ vector<cluster> gen_cluster(cluster Cin){
             Cout.push_back(pares_cercanos.first);
         }
     }
-    cout<< '3' << endl;
 
     cluster c_prima = cluster({});
     if(Cout.size() > 0){
         c_prima = vecino(Cout, C[0]);
     }
-    cout<< '4' << endl;
+
     cluster c_union = merge_clusters(c_prima, C[0]);
-    cout<< '5' << endl;
     if(c_prima.points.size() + C[0].points.size() <= B){
         Cout.push_back(c_union);
-        cout<< "6.1" << endl;
     }
     else{
+        cout<< "Min max split policy" << endl;
         pair<cluster, cluster> split = min_max_split(c_union);
-        cout<< "6.2" << endl;
         Cout.push_back(split.first);
         Cout.push_back(split.second);
     }
@@ -290,52 +282,34 @@ entry output_interno(Node Cmra, Node *interno){
     for (auto entry : entries){
         R = max(R, dist(entry.p, Cin_cluster.medoide) + entry.radius);
         interno->entries.push_back({entry.p, entry.radius, entry.a});
-        if(entry.a->is_leaf)
-            cout << "hoja " <<entry.a->entries.size() << endl;
-        else
-            cout << "interno " <<entry.a->entries.size() << endl;
     }
     return entry{Cin_cluster.medoide, R, interno};
 }
 
 Node *ss(set<point> P, vector<Node*>& hojas, vector<Node*>& internos){
+    cout<< "Inicio" << endl;
     cluster Cin = cluster(P);
     int hoja_i = 0, interno_i = 0;
     if (Cin.points.size() <= B){
         output_hoja(Cin, hojas[hoja_i]);
         return hojas[hoja_i];
     }
+    cout<< "Generacion de cluster" << endl;
     vector<cluster> Cout = gen_cluster(Cin);
     Node C = Node();
 
-    cout << "--- creacion hojas ---" << endl;
     for (cluster c : Cout){
         C.entries.push_back(output_hoja(c, hojas[hoja_i]));
-        cout << "actual " << C.entries[hoja_i].a->entries.size() << " - primero " << C.entries[0].a->entries.size() << endl;
         hojas.push_back(new Node());
         hoja_i++;
     }
-    cout << "----------------------" << endl;
 
-    int i = 0;
-    cout << "--- hojas en C ---" << endl;
-    for (auto entry : C.entries){
-        cout << "en C "<< entry.a->entries.size() << endl;
-        cout << "hoja "<< hojas[i]->entries.size() << endl;
-        i++;
-    }
-    cout << "------------------" << endl;
-
-
-    cout<< '6' << endl;
     while (C.entries.size() > B){
         vector<Node> Cmra;
         set<point> Cin;
         for (auto entry : C.entries)
             Cin.insert(entry.p);
-        cout<< '7' << endl;
         Cout = gen_cluster(cluster(Cin));
-        cout<< '8' << endl;
         for (auto c : Cout){
             Node s = Node();
             for (auto entry : C.entries){
@@ -344,37 +318,13 @@ Node *ss(set<point> P, vector<Node*>& hojas, vector<Node*>& internos){
             }
             Cmra.push_back(s);
         }
-        cout<< '9' << endl;
         C.entries.clear();
         for(auto node : Cmra){
-            cout << "--- output_interno --- " << endl;
             C.entries.push_back(output_interno(node, internos[interno_i]));
             internos.push_back(new Node());
             interno_i++;
-            cout << "---------------------- " << endl;
         }
-        cout << "10" << endl;
     }
-    cout << "11" << endl;
     output_interno(C, internos[interno_i]);
-    cout << "12" << endl;
-    cout << internos[interno_i]->entries.size() << endl;
     return internos[interno_i];
-}
-
-int main(){
-    cout<< sizeof(entry) << endl;
-    int N = pow(2,15);
-    set<point> P = generate_points(N);
-    vector<Node*> hojas;
-    vector<Node*> internos;
-    MTree T;
-    hojas.push_back(new Node());
-    internos.push_back(new Node());
-    T.root = ss(P, hojas, internos);
-    cout << T.root->entries.size() << endl;
-    Query q = {{0.5, 0.5}, 0.5};
-    set<point> s = search(T.root, q);
-    cout << "result = "<< s.size() <<", expected = " << N*3.14*0.25 << endl;
-    return 0;
 }

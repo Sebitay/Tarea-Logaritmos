@@ -7,7 +7,8 @@ double dist(point p1, point p2) {
     return sqrt(pow(p1.first - p2.first, 2) + pow(p1.second - p2.second, 2));
 }
 
-PointSet search(Node *T, Query q) {
+PointSet search(Node *T, Query q, long long& counter) {
+    counter++;
     PointSet result;
     // iterar sobre las entradas del nodo
     int i = 1;
@@ -19,7 +20,7 @@ PointSet search(Node *T, Query q) {
             }
         } else {
             if (dist(e.p, q.first) <= e.radius + q.second) {
-                PointSet childResult = search(e.a, q);
+                PointSet childResult = search(e.a, q, counter);
                 result.insert(childResult.begin(), childResult.end());
             }
         }
