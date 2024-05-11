@@ -1,106 +1,77 @@
-#include <bits/stdc++.h>
-#include <iostream>
-#include <string>
-#include "construccion/cp2.cpp"
 #include "construccion/ss.cpp"
-// #include "search.cpp"
+#include <bits/stdc++.h>
+#include <fstream> 
+#include <chrono>
+#include <cmath>
 using namespace std;
 
-typedef pair<double, double> point;
-typedef set<point> PointSet;
-typedef pair<point, double> Query;
-
-double dist(point p1, point p2) {
-    return sqrt(pow(p1.first - p2.first, 2) + pow(p1.second - p2.second, 2));
-}
-
-PointSet search(Node *T, Query q) {
-    PointSet result;
-    // iterar sobre las entradas del nodo
-    int i = 1;
-    for (entry e : T->entries) {
-        // si el nodo es una hoja
-        if (!e.a) {
-            if (dist(e.p, q.first) <= q.second) {
-                result.insert(e.p);
-            }
-        } else {
-            if (dist(e.p, q.first) <= e.radius + q.second) {
-                PointSet childResult = search(e.a, q);
-                result.insert(childResult.begin(), childResult.end());
-            }
-        }
-    }
-
-    return result;
-
-}
-
-int main(int argc, char* argv[]) {
-
-    if (argc != 3) {
-        cout << "Usage: " << argv[0] << " <construction_function> <p>" << endl;
+int main(){
+    ofstream outFile("output.txt");
+    if (!outFile.is_open()) {
+        cerr << "Error opening the file." << endl;
         return 1;
     }
+    outFile << "CC\n" << endl;
+    for(int i = 10; i <= 25; i++){
+        outFile << "Probando para N = 2^" << i << endl;
+        cout << "Probando para N = 2^" << i <<endl;
+        int N = pow(2,i);
 
-    // generar puntos:
-    int p = atoi(argv[2]);
-    int N = pow(2, p);
-    vector<point> points = generate_points(N);
+        vector<point> P = generate_points(N);
 
-    // construir el árbol:
-    auto start = chrono::high_resolution_clock::now();
-    string f = argv[1];
-    Node* T;
-    //vector<entry>;
-    if (f == "cp") {
-        T = cp(points);
-    } else if (f == "ss") {
-        //MTree* T = ss(points);
-    } else {
-        cout<<"Invalid construction function, use cp or ss"<<endl;
-        return 1;
-    }
-    auto end = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::seconds>(end - start);
-    auto hours = chrono::duration_cast<chrono::hours>(duration);
-    duration -= hours;
-    auto minutes = chrono::duration_cast<chrono::minutes>(duration);
-    duration -= minutes;
-    auto seconds = chrono::duration_cast<chrono::seconds>(duration);
-    cout << "Tiempo de construccion del arbol: " << hours.count() << " horas, " << minutes.count() << " minutos y " << seconds.count() << " segundos" << endl;
+        auto start = chrono::high_resolution_clock::now();
+        vector<Node*> hojas;
+        vector<Node*> internos;
+        MTree T;
 
-    // iterar sobre todo el arbol, mostrando su radio cobertor:
-    stack<Node*> st;
-    st.push(T);
-    while (!st.empty()) {
-        Node* n = st.top();
-        st.pop();
-        for (entry e : n->entries) {
-            if(e.radius > 0){
-                cout << "Radio cobertor: " << e.radius << endl;
-                cout<<"a: "<<e.a<<endl;
-                if (e.a) {
-                    st.push(e.a);
-                }
+        hojas.push_back(new Node());
+        internos.push_back(new Node());
+        T.root = ss(P, hojas, internos);
+        auto stop = chrono::high_resolution_clock::now();
+
+        auto create_time = chrono::duration_cast<chrono::milliseconds>(stop - start);
+        outFile << "create time = " << create_time.count() << " ms\n" << endl;
+
+        vector<Query> Q;
+        for(int j = 0; j < 100; j++){
+            point p = {generate_random_number(0,1), generate_random_number(0,1)};
+            double r = generate_random_number(0,min(min(p.first, 1-p.first), min(p.second, 1-p.second)));
+            Q.push_back({p, r});
+        }   
+        outFile << "Results" << endl;
+        for(auto q : Q){
+            long long counter = 0;
+
+            start = chrono::high_resolution_clock::now();
+            set<point> s = search(T.root, q, counter);
+            stop = chrono::high_resolution_clock::now();
+
+            auto search_time = chrono::duration_cast<chrono::milliseconds>(stop - start);
+            std::ostringstream oss;
+
+            oss << "query = (" << q.first.first << "," << q.first.second << "), " << q.second;
+            string text = oss.str();
+            int length = text.length();
+            for(int i = 0; i < 11-length/4; i++){
+                oss << "\t";
             }
+            oss << "|\t"; 
+            outFile << oss.str(); oss.str("");
+
+            oss << "result = "<< s.size() <<", expected = " << N*3.14*q.second*q.second;
+            text = oss.str();
+            length = text.length();
+            for(int i = 0; i < 10-length/4; i++){
+                oss << "\t";
+            }
+            oss << "|\t"; 
+            outFile << oss.str(); oss.str("");
+
+            oss << "time = " << search_time.count() << " ms\t\t|\tcounter = " << counter << endl;
+            outFile << oss.str(); oss.str("");
         }
+        outFile << endl;
     }
-    cout<<"Altura del arbol: "<<T->height()<<endl;
-
-    // hacer consultas:
-    // agregar tiempo de ejecucion a consultas?
-    /* PointSet Q = generate_points(100);
-    int r = 0.02;
-    for (auto q : Q) {
-        Query query = make_pair(q, r);
-        PointSet result = search(T, query);
-    } */
-    Query q = {{0.5, 0.5}, 0.5};
-    set<point> s = search(T, q);
-    cout << "result = "<< s.size() <<", expected = " << N*3.14*0.25 << endl;
-
-    cout<<"Done!"<<endl;
-
+    outFile.close();
     return 0;
 }

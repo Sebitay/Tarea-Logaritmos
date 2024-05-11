@@ -1,7 +1,9 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-typedef pair<double,double> point;
+typedef pair<double, double> point;
+typedef set<point> PointSet;
+typedef pair<point, double> Query;
 
 struct entry;
 struct Node;

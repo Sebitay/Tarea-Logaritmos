@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "*.py": "python",
+<<<<<<< HEAD
         "iostream": "cpp",
         "limits": "cpp",
         "ostream": "cpp",
@@ -14,10 +15,18 @@
         "utility": "cpp",
         "valarray": "cpp",
         "any": "cpp",
+=======
+        "any": "cpp",
+        "array": "cpp",
+>>>>>>> main
         "atomic": "cpp",
         "barrier": "cpp",
         "bit": "cpp",
         "*.tcc": "cpp",
+<<<<<<< HEAD
+=======
+        "bitset": "cpp",
+>>>>>>> main
         "cctype": "cpp",
         "cfenv": "cpp",
         "charconv": "cpp",
@@ -53,7 +62,10 @@
         "unordered_set": "cpp",
         "vector": "cpp",
         "exception": "cpp",
+<<<<<<< HEAD
         "expected": "cpp",
+=======
+>>>>>>> main
         "algorithm": "cpp",
         "functional": "cpp",
         "iterator": "cpp",
@@ -63,6 +75,7 @@
         "optional": "cpp",
         "random": "cpp",
         "ratio": "cpp",
+<<<<<<< HEAD
         "source_location": "cpp",
         "system_error": "cpp",
         "tuple": "cpp",
@@ -85,12 +98,45 @@
         "stacktrace": "cpp",
         "stdexcept": "cpp",
         "stdfloat": "cpp",
+=======
+        "regex": "cpp",
+        "source_location": "cpp",
+        "string_view": "cpp",
+        "system_error": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp",
+        "fstream": "cpp",
+        "future": "cpp",
+        "initializer_list": "cpp",
+        "iomanip": "cpp",
+        "iosfwd": "cpp",
+        "iostream": "cpp",
+        "istream": "cpp",
+        "latch": "cpp",
+        "limits": "cpp",
+        "mutex": "cpp",
+        "new": "cpp",
+        "numbers": "cpp",
+        "ostream": "cpp",
+        "ranges": "cpp",
+        "scoped_allocator": "cpp",
+        "semaphore": "cpp",
+        "shared_mutex": "cpp",
+        "span": "cpp",
+        "sstream": "cpp",
+        "stdexcept": "cpp",
+>>>>>>> main
         "stop_token": "cpp",
         "streambuf": "cpp",
         "syncstream": "cpp",
         "thread": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
+<<<<<<< HEAD
+=======
+        "valarray": "cpp",
+>>>>>>> main
         "variant": "cpp"
     }
 }
