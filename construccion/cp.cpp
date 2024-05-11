@@ -1,15 +1,10 @@
 #include <bits/stdc++.h>
 #include <iostream>
-#include "../mtree.cpp"
-#include "../plot.cpp"
+#include "../search.cpp"
 using namespace std;
 
 typedef pair<double, double> point;
 typedef set<point> PointSet;
-
-int B = 4096/sizeof(entry);
-int b = B/2;
-
 
 double distance(point p1, point p2) {
     return sqrt(pow(p1.first - p2.first, 2) + pow(p1.second - p2.second, 2));
@@ -31,60 +26,48 @@ void setCoveringRadius(Node& node) {
     }
 }
 
-void setTsupPointers(Node *Tsup, vector<MTree>& Tprime, vector<point>& F){
+void setTsupPointers(Node *Tsup, vector<Node*>& Tprime, vector<point>& F){
     for(auto& entry : Tsup->entries){
         if(entry.a)
             setTsupPointers(entry.a, Tprime, F);
         else{
             auto it = find(F.begin(), F.end(), entry.p);
             // poner como hijo el subarbol correspondiente
-            entry.a = Tprime[distance(F.begin(), it)].root;
+            entry.a = Tprime[distance(F.begin(), it)];
         }
     }
 };
 
-vector<MTree> subtrees_h(Node& node, int h) {
-    // crear una cola
-    queue<Node*> q;
-    vector<MTree> subtrees;
-    q.push(&node);
-    while (!q.empty()) {
-        // sacar el primer elemento de la cola
-        for (auto& e : q.front()->entries) {
-            if (e.a) {
-                MTree T = MTree();
-                T.root = e.a;
-                int height = T.height();
-                if (height != h) {
-                    // añadir a la cola
-                    q.push(e.a);
-                } else {
-                    subtrees.push_back(T);
-                }      
-            }
+void subtrees_h(Node *Tj, int h, point p, vector<Node*>& Tprime, vector<point>& F) {
+    if(Tj->height() < h)
+        return;
+    if(Tj->height() == h){
+        Tprime.push_back(Tj);
+        F.push_back(p);
+    }else{
+        for(auto entry : Tj->entries){
+            subtrees_h(entry.a, h, entry.p, Tprime, F);
         }
-        q.pop();
     }
-    return subtrees;
+    return;
 };
 
-MTree cp(PointSet P) {
+Node* cp(vector<point> P) {
     // Si |P| ≤ B, se crea un árbol T, se insertan todos los puntos a T y se retorna T:
     if (P.size() <= B) {
-        MTree* T = new MTree;
-        T->root = new Node;
+        Node* T = new Node;
         for (auto& p : P) {
             entry e;
             e.p = p;
             e.radius = 0;
             e.a = nullptr;
-            T->root->entries.push_back(e);
+            T->entries.push_back(e);
         }
-        return *T;
+        return T;
     }
     int k = min(B, static_cast<int>(ceil((P.size() / (double)B))));
     vector<point> F;
-    vector<PointSet> Fk(k);
+    vector<vector<point>> Fk(k);
     do{
         // 2. De manera aleatoria se eligen k = min(B, n/B) puntos de P, que los llamaremos samples
         // pf1, . . . , pfk. Se insertan en un conjunto F de samples.
@@ -115,7 +98,7 @@ MTree cp(PointSet P) {
                 i++;
             }
             // añadir p a Fk[idx]:
-            Fk[idx].insert(p);
+            Fk[idx].push_back(p);
             
         }
         // 4. Etapa de redistribución: Si algún Fj es tal que |Fj| < b:
@@ -139,7 +122,7 @@ MTree cp(PointSet P) {
                         }
                     }
                     // añadir p a Fk[idx]:
-                    Fk[idx].insert(p);
+                    Fk[idx].push_back(p);
 
                 }
                 // Vaciamos F
@@ -149,29 +132,25 @@ MTree cp(PointSet P) {
     } while(F.size() == 1);
 
     // 6. Se realiza recursivamente el algoritmo CP en cada Fj, obteniendo el árbol Tj
-    vector<MTree> Tk;
-    for (int j = 0; j < k; j++) {
-        if (Fk[j].size() == 0) continue;
-        MTree Tj = cp(Fk[j]);
+    vector<Node*> Tk;
+    for (int i = 0; i < k; i++) {
+        Node *Tj = cp(Fk[i]);
         Tk.push_back(Tj);
-  
+    }
+
+    for (int i = 0; i < k; i++) {
         // 7. Si la raíz del árbol es de un tamaño menor a b, se quita esa raíz, se elimina pfj de F y se trabaja
         // con sus subárboles como nuevos Tj, se añaden los puntos pertinentes a F.
         // revisar
-        if (Tj.root->entries.size() < b) {
+        if (Tk[i]->entries.size() < b) {
             // Se elimina pfj de F
-            F.erase(remove(F.begin(), F.end(), F[j]));
-            // Se trabaja con los subárboles de Tj como nuevos Tj
-            for (auto& e : Tj.root->entries) {
-                Tk.push_back(cp(Fk[j]));
+            for(auto entry : Tk[i]->entries){
+                F.push_back(entry.p);
+                Tk.push_back(entry.a);
             }
-            // Se añaden los puntos pertinentes a F
-            // (revisar si estos son los puntos pertienentes)
-            for (auto& e : Tj.root->entries) {
-                F.push_back(e.p);
-            }
-            // Se quita la raíz de Tj
-            Tj.root = nullptr;
+            F.erase(remove(F.begin(), F.end(), F[i]));
+            Tk.erase(remove(Tk.begin(), Tk.end(), Tk[i]));
+            // Se trabaja con los subárboles de Tj como nuevos Tj   
         }
     }   
 
@@ -180,56 +159,42 @@ MTree cp(PointSet P) {
     /* cout<<"paso 8"<<endl; */
     int h = numeric_limits<int>::max();
     for (int j = 0; j < k; j++) {
-        h = min(h, Tk[j].height());
+        h = min(h, Tk[j]->height());
     }
     //cout<<"h: "<<h<<endl; 
     // definir T'
-    vector<MTree> Tprime;
+    vector<Node*> Tprime;
 
     // 9. Por cada Tj, si su altura es igual a h, se añade a T′.
     // Si no, 9.1, 9.2 y 9.3
     /* cout<<"paso 9"<<endl; */
-    for (int j = 0; j < k; j++) {
-        if (Tk[j].height() == h) {
-            Tprime.push_back(Tk[j]);
-        } else {
-            // 9.1 Se borra el punto pertinente en F.
-            F.erase(remove(F.begin(), F.end(), F[j]));
-
-            // 9.2 Se hace una búsqueda exhaustiva en Tj de todos los subárboles T1', . . . , Tp′ de altura igual
-            // a h. Se insertan estos árboles a T′
-            // split Tj into p sub-trees T1 ,..., Tp of height hmi
-            vector<MTree> Tp = subtrees_h(*Tk[j].root, h);
-            for (auto& T : Tp) {
-                Tprime.push_back(T);
-            }
-
-            // 9.3 Se añaden los puntos pertinentes a F.
-            for (auto& T : Tp) {
-                for (auto& e : T.root->entries) {
-                    F.push_back(e.p);
-                }
-            }
+    for(int i = 0; i<Tk.size(); i++){
+        Node* tree = Tk[i];
+        if(tree->height() == h)
+            Tprime.push_back(tree);
+        else{
+            point p = F[i];
+            F.erase(remove(F.begin(), F.end(), p));
+            subtrees_h(tree, h, p, Tprime, F);
         }
     }
 
     // 10. Se define Tsup como el resultado de la llamada al algoritmo CP aplicado a F.
     /* cout<<"paso 10"<<endl; */
-    PointSet F_set(F.begin(), F.end());
-    MTree Tsup = cp(F_set);
+    Node* Tsup = cp(F);
 
     // 11. Se une cada Tj ∈ T′ a su hoja en Tsup correspondiente al punto pfj ∈ F, obteniendo un nuevo árbol T.
     /* cout<<"paso 11"<<endl; */
-    MTree *T = new MTree;
+    Node *T = new Node;
     vector<entry> entries;
-    setTsupPointers(Tsup.root, Tprime, F);
-    T->root = Tsup.root;
+    setTsupPointers(Tsup, Tprime, F);
+    T = Tsup;
 
     // 12. Se setean los radios cobertores resultantes para cada entrada en este árbol.
     /* cout<<"paso 12"<<endl; */
-    setCoveringRadius(*(T->root));
+    setCoveringRadius(*T);
 
     // 13. Se retorna T
     /* cout<<"paso 13"<<endl; */
-    return *T;
+    return T;
 }
