@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 #include <iostream>
 #include <string>
-#include "construccion/cp.cpp"
+#include "construccion/cp2.cpp"
 #include "construccion/ss.cpp"
 // #include "search.cpp"
 using namespace std;
@@ -46,12 +46,12 @@ int main(int argc, char* argv[]) {
     // generar puntos:
     int p = atoi(argv[2]);
     int N = pow(2, p);
-    PointSet points = generate_points(N);
+    vector<point> points = generate_points(N);
 
     // construir el árbol:
     auto start = chrono::high_resolution_clock::now();
     string f = argv[1];
-    MTree T;
+    Node* T;
     //vector<entry>;
     if (f == "cp") {
         T = cp(points);
@@ -72,19 +72,21 @@ int main(int argc, char* argv[]) {
 
     // iterar sobre todo el arbol, mostrando su radio cobertor:
     stack<Node*> st;
-    st.push(T.root);
+    st.push(T);
     while (!st.empty()) {
         Node* n = st.top();
         st.pop();
         for (entry e : n->entries) {
-            cout << "Radio cobertor: " << e.radius << endl;
-            cout<<"a: "<<e.a<<endl;
-            if (e.a) {
-                st.push(e.a);
+            if(e.radius > 0){
+                cout << "Radio cobertor: " << e.radius << endl;
+                cout<<"a: "<<e.a<<endl;
+                if (e.a) {
+                    st.push(e.a);
+                }
             }
         }
     }
-    cout<<"Altura del arbol: "<<T.height()<<endl;
+    cout<<"Altura del arbol: "<<T->height()<<endl;
 
     // hacer consultas:
     // agregar tiempo de ejecucion a consultas?
@@ -95,7 +97,7 @@ int main(int argc, char* argv[]) {
         PointSet result = search(T, query);
     } */
     Query q = {{0.5, 0.5}, 0.5};
-    set<point> s = search(T.root, q);
+    set<point> s = search(T, q);
     cout << "result = "<< s.size() <<", expected = " << N*3.14*0.25 << endl;
 
     cout<<"Done!"<<endl;
