@@ -17,7 +17,7 @@ int main(){
         cout << "Probando para N = 2^" << i <<endl;
         int N = pow(2,i);
 
-        set<point> P = generate_points(N);
+        vector<point> P = generate_points(N);
 
         auto start = chrono::high_resolution_clock::now();
         vector<Node*> hojas;

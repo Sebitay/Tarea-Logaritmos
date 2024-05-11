@@ -8,10 +8,10 @@ int B = 4096/sizeof(entry);
 int b = B/2;
 
 struct cluster{
-    set<point> points;
+    vector<point> points;
     point medoide;
 
-    cluster(const set<point>& pts) : points(pts) {
+    cluster(const vector<point>& pts) : points(pts) {
         medoide = calculate_medoide();
     }
 
@@ -42,12 +42,12 @@ bool operator==(const cluster& lhs, const cluster& rhs) {
 }
 
 cluster merge_clusters(cluster C, cluster D){
-    set<point> points;
+    vector<point> points;
     for (auto p : C.points){
-        points.insert(p);
+        points.push_back(p);
     }
     for (auto p : D.points){
-        points.insert(p);
+        points.push_back(p);
     }
     return cluster(points);
 }
@@ -163,7 +163,7 @@ pair<cluster, cluster> par_mas_cercano_dc(vector<cluster> clusters) {
 }
 
 
-double covering_radius(set<point> points){
+double covering_radius(vector<point> points){
     double best_radius = 1e9;
     for(auto p : points){
         double max_radius = 0.0;
@@ -181,7 +181,7 @@ double covering_radius(set<point> points){
 //FUNCION MIN MAX SPLIT
 pair<cluster, cluster> min_max_split(cluster C){
     cluster C1 = cluster({}), C2 = cluster({});
-    pair<set<point>,set<point>> best_points;
+    pair<vector<point>,vector<point>> best_points;
     double min_radius = 1e9;
     int i = 0;
     for(auto p = C.points.begin(); p != C.points.end(); p++){
@@ -199,16 +199,16 @@ pair<cluster, cluster> min_max_split(cluster C){
             }
             auto it_p = distancias_p.begin();
             auto it_q = distancias_q.begin();
-            set<point> puntos_c1, puntos_c2;
+            vector<point> puntos_c1, puntos_c2;
             while(it_p != distancias_p.end() && it_q != distancias_q.end()){
-                puntos_c1.insert(it_p->second);
+                puntos_c1.push_back(it_p->second);
                 puntos_agregados.insert(it_p->second);
                 
                 while(puntos_agregados.find(it_q->second) != puntos_agregados.end() && it_q != distancias_q.end()){
                     it_q++;
                 }
 
-                puntos_c2.insert(it_q->second);
+                puntos_c2.push_back(it_q->second);
                 puntos_agregados.insert(it_q->second);
                 it_p++;
                 it_q++;
@@ -267,17 +267,16 @@ entry output_hoja(cluster Cin, Node *hoja){
         hoja->entries.push_back({p, 0, nullptr});
         r = max(r, dist(p, Cin.medoide));
     }
-    hoja->is_leaf = true;
     return entry{Cin.medoide, r, hoja};
 }
 
 
 entry output_interno(Node Cmra, Node *interno){
-    set<point> Cin;
+    vector<point> Cin;
     double R = 0;
     vector<entry> entries = Cmra.entries;
     for (auto entry : entries)
-        Cin.insert(entry.p);
+        Cin.push_back(entry.p);
     cluster Cin_cluster = cluster(Cin);
     for (auto entry : entries){
         R = max(R, dist(entry.p, Cin_cluster.medoide) + entry.radius);
@@ -286,7 +285,7 @@ entry output_interno(Node Cmra, Node *interno){
     return entry{Cin_cluster.medoide, R, interno};
 }
 
-Node *ss(set<point> P, vector<Node*>& hojas, vector<Node*>& internos){
+Node *ss(vector<point> P, vector<Node*>& hojas, vector<Node*>& internos){
     cout<< "Inicio" << endl;
     cluster Cin = cluster(P);
     int hoja_i = 0, interno_i = 0;
@@ -306,15 +305,17 @@ Node *ss(set<point> P, vector<Node*>& hojas, vector<Node*>& internos){
 
     while (C.entries.size() > B){
         vector<Node> Cmra;
-        set<point> Cin;
+        vector<point> Cin;
         for (auto entry : C.entries)
-            Cin.insert(entry.p);
+            Cin.push_back(entry.p);
         Cout = gen_cluster(cluster(Cin));
         for (auto c : Cout){
             Node s = Node();
             for (auto entry : C.entries){
-                if (c.points.find(entry.p) != c.points.end())
-                    s.entries.push_back(entry);
+                for(auto point : c.points){
+                    if(point == entry.p)
+                        s.entries.push_back(entry);
+                }
             }
             Cmra.push_back(s);
         }
