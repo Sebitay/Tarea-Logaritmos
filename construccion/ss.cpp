@@ -179,10 +179,8 @@ pair<cluster, cluster> min_max_split(cluster C){
     cluster C1 = cluster({}), C2 = cluster({});
     pair<vector<point>,vector<point>> best_points;
     double min_radius = 1e9;
-    cout<< C.points.size()<<endl;
     int i = 0;
     for(auto p = C.points.begin(); p != C.points.end(); p++){
-        cout<< ++i <<endl;
         for(auto q = next(p); q != C.points.end(); q++){
             if(p == q)
                 break;

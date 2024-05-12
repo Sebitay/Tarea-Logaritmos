@@ -10,18 +10,17 @@ double distance(point p1, point p2) {
     return sqrt(pow(p1.first - p2.first, 2) + pow(p1.second - p2.second, 2));
 }
 
-void setCoveringRadius(Node& node) {
-    for (auto& e : node.entries) {
+void setCoveringRadius(Node *node) {
+    if(!node) return;
+    for (entry& e : node->entries) {
         if (e.a) {
-            // cout<<"setCoveringRadius"<<endl;
             double max_dist = 0;
-            for (auto& e2 : e.a->entries) {
+            for (entry& e2 : e.a->entries) {
                 double dist = distance(e.p, e2.p);
                 max_dist = max(max_dist, dist);
             }
-            // cout<<"max_dist: "<<max_dist<<endl;
             e.radius = max_dist;
-            setCoveringRadius(*e.a);
+            setCoveringRadius(e.a);
         }
     }
 }
@@ -39,8 +38,10 @@ void setTsupPointers(Node *Tsup, vector<Node*>& Tprime, vector<point>& F){
 };
 
 void subtrees_h(Node *Tj, int h, point p, vector<Node*>& Tprime, vector<point>& F) {
-    if(Tj->height() < h)
+    if(Tj->height() < h){
+        cout << " - post 1" << endl;
         return;
+    }
     if(Tj->height() == h){
         Tprime.push_back(Tj);
         F.push_back(p);
@@ -55,6 +56,7 @@ void subtrees_h(Node *Tj, int h, point p, vector<Node*>& Tprime, vector<point>& 
 Node* cp(vector<point> P) {
     // Si |P| ≤ B, se crea un árbol T, se insertan todos los puntos a T y se retorna T:
     if (P.size() <= B) {
+        if (P.size() == 0) return nullptr;
         Node* T = new Node;
         for (auto& p : P) {
             entry e;
@@ -63,6 +65,7 @@ Node* cp(vector<point> P) {
             e.a = nullptr;
             T->entries.push_back(e);
         }
+        T->entries.size();
         return T;
     }
     int k = min(B, static_cast<int>(ceil((P.size() / (double)B))));
@@ -102,7 +105,7 @@ Node* cp(vector<point> P) {
             
         }
         // 4. Etapa de redistribución: Si algún Fj es tal que |Fj| < b:
-        for (int i = 0; i < k; i++) {
+        for (int i = k - 1; i > -1; i--) {
             if (Fk[i].size() < b) {
                 // 4.1 Quitamos pfj de F
                 F.erase(remove(F.begin(), F.end(), F[i]));
@@ -133,32 +136,35 @@ Node* cp(vector<point> P) {
 
     // 6. Se realiza recursivamente el algoritmo CP en cada Fj, obteniendo el árbol Tj
     vector<Node*> Tk;
-    for (int i = 0; i < k; i++) {
-        Node *Tj = cp(Fk[i]);
-        Tk.push_back(Tj);
+    for (int i = 0; i < k; i++){
+        if (Fk[i].size() == 0) continue;
+        Tk.push_back(cp(Fk[i]));
     }
 
-    for (int i = 0; i < k; i++) {
+    for (int i = Tk.size() - 1; i > -1 ; i--) {
         // 7. Si la raíz del árbol es de un tamaño menor a b, se quita esa raíz, se elimina pfj de F y se trabaja
         // con sus subárboles como nuevos Tj, se añaden los puntos pertinentes a F.
         // revisar
         if (Tk[i]->entries.size() < b) {
             // Se elimina pfj de F
-            for(auto entry : Tk[i]->entries){
-                F.push_back(entry.p);
-                Tk.push_back(entry.a);
+            for(auto& entry : Tk[i]->entries){
+                if(entry.a){
+                    Tk.push_back(entry.a);
+                    F.push_back(entry.p);
+                }
             }
             F.erase(remove(F.begin(), F.end(), F[i]));
             Tk.erase(remove(Tk.begin(), Tk.end(), Tk[i]));
             // Se trabaja con los subárboles de Tj como nuevos Tj   
-        }
+        }  
     }   
 
     // 8. Etapa de balanceamiento: Se define h como la altura mínima de los árboles Tj. Se define T′
     // inicialmente como un conjunto vacío.
     /* cout<<"paso 8"<<endl; */
     int h = numeric_limits<int>::max();
-    for (int j = 0; j < k; j++) {
+    for (int j = 0; j < Tk.size(); j++) {
+        if(!Tk[j]) cout<< "Vacio" << j << endl;
         h = min(h, Tk[j]->height());
     }
     //cout<<"h: "<<h<<endl; 
@@ -168,8 +174,11 @@ Node* cp(vector<point> P) {
     // 9. Por cada Tj, si su altura es igual a h, se añade a T′.
     // Si no, 9.1, 9.2 y 9.3
     /* cout<<"paso 9"<<endl; */
-    for(int i = 0; i<Tk.size(); i++){
-        Node* tree = Tk[i];
+    
+    for(int i = Tk.size() - 1; i > -1; i--){
+        Node* tree = new Node;
+        tree = Tk[i];
+        if (!tree) continue;
         if(tree->height() == h)
             Tprime.push_back(tree);
         else{
@@ -178,21 +187,22 @@ Node* cp(vector<point> P) {
             subtrees_h(tree, h, p, Tprime, F);
         }
     }
+    
 
     // 10. Se define Tsup como el resultado de la llamada al algoritmo CP aplicado a F.
     /* cout<<"paso 10"<<endl; */
-    Node* Tsup = cp(F);
+    Node* Tsup = new Node;
+    Tsup = cp(F);
 
     // 11. Se une cada Tj ∈ T′ a su hoja en Tsup correspondiente al punto pfj ∈ F, obteniendo un nuevo árbol T.
     /* cout<<"paso 11"<<endl; */
-    Node *T = new Node;
-    vector<entry> entries;
+    Node *T = new Node; 
     setTsupPointers(Tsup, Tprime, F);
     T = Tsup;
 
     // 12. Se setean los radios cobertores resultantes para cada entrada en este árbol.
     /* cout<<"paso 12"<<endl; */
-    setCoveringRadius(*T);
+    setCoveringRadius(T);
 
     // 13. Se retorna T
     /* cout<<"paso 13"<<endl; */
