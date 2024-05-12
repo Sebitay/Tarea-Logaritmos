@@ -36,6 +36,7 @@ lines = file.readlines()
 
 ```bash
 python -m venv venv
+source venv/bin/activate
 ```
 
 2. Instalar dependencias 
