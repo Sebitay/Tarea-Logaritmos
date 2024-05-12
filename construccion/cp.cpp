@@ -65,7 +65,6 @@ Node* cp(vector<point> P) {
             e.a = nullptr;
             T->entries.push_back(e);
         }
-        T->entries.size();
         return T;
     }
     int k = min(B, static_cast<int>(ceil((P.size() / (double)B))));

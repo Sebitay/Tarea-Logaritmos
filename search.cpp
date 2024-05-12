@@ -21,7 +21,5 @@ PointSet search(Node *T, Query q, long long& counter) {
             }
         }
     }
-
     return result;
-
 }
